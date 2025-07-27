@@ -7,7 +7,7 @@ import pdfplumber
 import markdown
 from bs4 import BeautifulSoup
 import docx
-from ..utils.helpers import log_message
+from utils.helpers import log_message
 
 class DocumentProcessor:
     """Handles extraction and preprocessing of various document types."""

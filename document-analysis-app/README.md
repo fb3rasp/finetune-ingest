@@ -280,22 +280,22 @@ python src/main.py --temperature 1.0
 
 ### Common Issues
 
-**"No API key configured"**
+#### "No API key configured"
 
 - Ensure your `.env` file contains the correct API key
 - Check the key is valid and has sufficient credits
 
-**"No documents found"**
+#### "No documents found"
 
 - Verify files are in the `./incoming` directory
 - Check file formats are supported (PDF, MD, HTML, DOCX, TXT)
 
-**"Failed to initialize provider"**
+#### "Failed to initialize provider"
 
 - Install missing dependencies: `pip install -r requirements.txt`
 - For local provider, ensure Ollama is running
 
-**"ImportError: No module named 'mcp'"**
+#### "ImportError: No module named 'mcp'"
 
 - Update dependencies: `pip install -r requirements.txt`
 - Try installing specific package: `pip install mcp`

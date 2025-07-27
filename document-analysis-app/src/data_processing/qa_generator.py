@@ -3,7 +3,7 @@ import os
 from typing import Dict, List, Optional, Union
 from enum import Enum
 from pathlib import Path
-from ..utils.helpers import log_message
+from utils.helpers import log_message
 
 class LLMProvider(Enum):
     """Supported LLM providers."""
@@ -43,7 +43,7 @@ class QAGenerator:
         """Get default model for each provider."""
         defaults = {
             LLMProvider.OPENAI: "gpt-4",
-            LLMProvider.CLAUDE: "claude-3-sonnet-20240229",
+            LLMProvider.CLAUDE: "claude-3-5-sonnet-20241022",
             LLMProvider.GEMINI: "gemini-pro",
             LLMProvider.LOCAL: "llama3"
         }
@@ -112,7 +112,7 @@ class QAGenerator:
     def _create_qa_prompt(self, text: str, num_questions: int) -> str:
         """Create a prompt for Q&A generation."""
         return f"""You are an expert at creating high-quality training data for language models. 
-Based on the following text, generate {num_questions} question-answer pairs that would help train a chatbot to understand and respond about this content.
+Based on the following text, generate exactly {num_questions} question-answer pairs that would help train a chatbot to understand and respond about this content.
 
 Guidelines:
 1. Questions should be diverse (factual, analytical, explanatory)
@@ -124,12 +124,17 @@ Guidelines:
 Text to analyze:
 {text}
 
-Please respond with a JSON array of objects, each containing "question" and "answer" fields:
+IMPORTANT: You must respond with ONLY a valid JSON array. Do not include any other text, explanations, or formatting. Start your response with [ and end with ].
 
+Example format:
 [
   {{
     "question": "Your question here",
     "answer": "Your detailed answer here"
+  }},
+  {{
+    "question": "Another question here", 
+    "answer": "Another detailed answer here"
   }}
 ]
 
@@ -203,6 +208,12 @@ JSON Response:"""
     def _parse_qa_response(self, response: str) -> List[Dict]:
         """Parse the LLM response to extract Q&A pairs."""
         try:
+            # Clean the response
+            response = response.strip()
+            
+            # Log raw response for debugging
+            log_message(f"Raw response preview: {response[:200]}...")
+            
             # Try to find JSON in the response
             start_idx = response.find('[')
             end_idx = response.rfind(']') + 1
@@ -211,6 +222,8 @@ JSON Response:"""
                 raise ValueError("No JSON array found in response")
             
             json_str = response[start_idx:end_idx]
+            log_message(f"Extracted JSON: {json_str[:200]}...")
+            
             qa_pairs = json.loads(json_str)
             
             # Validate structure
@@ -218,10 +231,12 @@ JSON Response:"""
                 if 'question' not in qa or 'answer' not in qa:
                     raise ValueError("Invalid Q&A pair structure")
             
+            log_message(f"Successfully parsed {len(qa_pairs)} Q&A pairs")
             return qa_pairs
             
         except Exception as e:
             log_message(f"Error parsing Q&A response: {str(e)}")
+            log_message(f"Full response: {response}")
             # Fallback: try to extract manually
             return self._manual_parse_qa(response)
     

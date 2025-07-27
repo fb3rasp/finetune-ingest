@@ -344,11 +344,11 @@ def demonstrate_multi_llm_usage(processed_docs):
     if successful_generations > 0:
         print(f"\n🎉 Successfully generated training data with {successful_generations} provider(s)")
     else:
-        print(f"\n⚠️  No providers were successful. Check your API keys and configurations.")
+        print(f"\n  No providers were successful. Check your API keys and configurations.")
 
 def demonstrate_advanced_features():
     """Demonstrate advanced features like custom chunking and parameters."""
-    print("\n⚙️ Advanced Features Demonstration")
+    print("\n Advanced Features Demonstration")
     print("=" * 50)
     
     # Custom chunking demonstration
@@ -370,7 +370,7 @@ def demonstrate_advanced_features():
     
     # Parameter comparison demonstration
     if os.getenv('OPENAI_API_KEY'):
-        print(f"\n🎛️ Parameter Comparison (using OpenAI)")
+        print(f"\n Parameter Comparison (using OpenAI)")
         
         # Test different temperatures
         temperatures = [0.3, 0.7, 1.0]
