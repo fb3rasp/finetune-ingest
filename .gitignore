@@ -1,3 +1,4 @@
 .env
 __pycache__
+src/data_processing/__pycache__
 incoming/
