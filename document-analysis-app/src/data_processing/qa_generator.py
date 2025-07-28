@@ -96,7 +96,8 @@ class QAGenerator:
                     'chunk_id': chunk['chunk_id'],
                     'chunk_start': chunk['start_char'],
                     'chunk_end': chunk['end_char'],
-                    'source_text': chunk['text'][:500] + "..." if len(chunk['text']) > 500 else chunk['text'],
+                    'source_text': chunk['text'],
+                    # chunk['text'][:500] + "..." if len(chunk['text']) > 500 else chunk['text'],
                     'generated_by': {
                         'provider': self.provider.value,
                         'model': self.model

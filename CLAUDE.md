@@ -6,11 +6,14 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ### Setup and Installation
 
+- Every time you start a new terminal, you need to source the .zshrc file to activate the conda environment.
+
 ```bash
+source /Users/rainer/.zshrc
 conda activate finetune
 ```
 
-- conda is an alias for /Users/rainer/miniconda3/bin/conda
+- Install the dependencies and copy the example environment file.
 
 ```bash
 cd document-analysis-app
