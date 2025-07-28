@@ -85,6 +85,25 @@ python example_usage.py
 python -c "from src.data_processing.qa_generator import QAGenerator; print('Setup OK')"
 ```
 
+### QA Validation (Quality Assurance)
+
+```bash
+# Validate training data for factual accuracy
+python src/validate_qa.py --input training_data.json
+
+# Validate with specific validator model
+python src/validate_qa.py --input training_data.json --validator-provider claude --validator-model claude-3-5-sonnet-20241022
+
+# Generate filtered training data (removes low-quality pairs)
+python src/validate_qa.py --input training_data.json --filtered-output training_data_filtered.json --filter-threshold 7.0
+
+# Show detailed validation results
+python src/validate_qa.py --input training_data.json --show-details
+
+# List available validator models
+python src/validate_qa.py --list-providers --input dummy
+```
+
 ## Architecture Overview
 
 ### Legacy Components (Original Implementation)
@@ -133,6 +152,13 @@ python -c "from src.data_processing.qa_generator import QAGenerator; print('Setu
 - Unified interface replacing legacy implementation
 - Enhanced configuration and monitoring capabilities
 
+**QAValidator** (`src/langchain_processing/qa_validator.py`)
+
+- LangChain-based validation system for generated Q&A pairs
+- Factual accuracy checking against source documents
+- Automated scoring and quality filtering
+- Comprehensive validation reporting and metrics
+
 ### Shared Components
 
 **MCP Server** (`src/mcp_server/server.py`)
@@ -147,6 +173,8 @@ python -c "from src.data_processing.qa_generator import QAGenerator; print('Setu
 2. DocumentProcessor extracts text and creates chunks
 3. QAGenerator processes chunks to create Q&A pairs with metadata
 4. Output saved as structured JSON with full source traceability
+5. **QAValidator validates generated pairs for factual accuracy** (optional)
+6. **Filtered high-quality training data exported** (optional)
 
 ### Directory Structure
 
