@@ -2,11 +2,30 @@ import os
 import json
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
-import PyPDF2
-import pdfplumber
-import markdown
-from bs4 import BeautifulSoup
-import docx
+try:
+    import PyPDF2
+except ImportError:
+    PyPDF2 = None
+
+try:
+    import pdfplumber
+except ImportError:
+    pdfplumber = None
+
+try:
+    import markdown
+except ImportError:
+    markdown = None
+
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    BeautifulSoup = None
+
+try:
+    import docx
+except ImportError:
+    docx = None
 from utils.helpers import log_message
 
 class DocumentProcessor:

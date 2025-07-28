@@ -7,14 +7,28 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 import logging
 
-from mcp.server import Server
-from mcp.types import (
-    Resource, 
-    Tool, 
-    TextContent, 
-    ImageContent, 
-    EmbeddedResource
-)
+try:
+    from mcp.server import Server
+    from mcp.types import (
+        Resource, 
+        Tool, 
+        TextContent, 
+        ImageContent, 
+        EmbeddedResource
+    )
+    MCP_AVAILABLE = True
+except ImportError:
+    print("MCP packages not available. Install with: pip install mcp")
+    print("MCP server functionality will be disabled.")
+    MCP_AVAILABLE = False
+    # Create dummy classes to prevent import errors
+    class Server: pass
+    class Resource: pass
+    class Tool: pass
+    class TextContent: pass
+    class ImageContent: pass
+    class EmbeddedResource: pass
+
 from pydantic import BaseModel
 
 # Import our existing functionality

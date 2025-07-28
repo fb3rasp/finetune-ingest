@@ -24,6 +24,7 @@ cp config_example.env .env
 
 ### Core Application Usage
 
+#### Legacy Implementation (Original)
 ```bash
 # Basic training data generation
 python src/main.py --provider openai --model gpt-4
@@ -34,6 +35,30 @@ python src/main.py --provider openai --list-models
 
 # Generate with custom parameters
 python src/main.py --provider claude --questions-per-chunk 5 --chunk-size 800 --temperature 0.5
+```
+
+#### LangChain Implementation (Enhanced)
+```bash
+# Basic training data generation with LangChain
+python src/main_langchain.py --provider openai --model gpt-4
+
+# List available providers and models
+python src/main_langchain.py --list-providers
+python src/main_langchain.py --provider openai --list-models
+
+# Advanced configuration with LangChain features
+python src/main_langchain.py \
+  --provider claude \
+  --model claude-3-5-sonnet-20241022 \
+  --chunk-size 1200 \
+  --chunk-overlap 300 \
+  --questions-per-chunk 5 \
+  --splitting-strategy recursive \
+  --batch-processing \
+  --temperature 0.8
+
+# Show current configuration
+python src/main_langchain.py --show-config
 
 # Run comprehensive demo
 python example_usage.py
@@ -62,7 +87,7 @@ python -c "from src.data_processing.qa_generator import QAGenerator; print('Setu
 
 ## Architecture Overview
 
-### Core Components
+### Legacy Components (Original Implementation)
 
 **DocumentProcessor** (`src/data_processing/preprocess.py`)
 
@@ -75,6 +100,40 @@ python -c "from src.data_processing.qa_generator import QAGenerator; print('Setu
 - Multi-LLM provider support (OpenAI, Claude, Gemini, Local/Ollama)
 - Q&A pair generation with source traceability
 - Configurable parameters (temperature, questions per chunk)
+
+### LangChain Components (Enhanced Implementation)
+
+**LangChainDocumentLoader** (`src/langchain_processing/document_loaders.py`)
+
+- Unified document loading using specialized LangChain loaders
+- Enhanced metadata extraction and error handling
+- Support for PyPDF, Unstructured Markdown/HTML/Word, and Text loaders
+
+**EnhancedTextSplitter** (`src/langchain_processing/text_splitters.py`)
+
+- Multiple splitting strategies: recursive, character, markdown, HTML
+- Hierarchical splitting with semantic awareness
+- Metadata preservation through splitting process
+
+**UnifiedLLMProvider** (`src/langchain_processing/llm_providers.py`)
+
+- Single interface for all LLM providers using LangChain wrappers
+- Built-in retry logic, error handling, and rate limiting
+- Support for streaming and batch processing
+
+**QAGenerationChain** (`src/langchain_processing/qa_chains.py`)
+
+- Advanced Q&A generation using LangChain chains and prompt templates
+- Structured output parsing with Pydantic models
+- Robust error handling with fallback parsing
+
+**LangChainProcessor** (`src/langchain_processing/processors.py`)
+
+- Main orchestrator coordinating all LangChain components
+- Unified interface replacing legacy implementation
+- Enhanced configuration and monitoring capabilities
+
+### Shared Components
 
 **MCP Server** (`src/mcp_server/server.py`)
 
@@ -94,13 +153,22 @@ python -c "from src.data_processing.qa_generator import QAGenerator; print('Setu
 ```
 document-analysis-app/
 ├── src/
-│   ├── main.py              # CLI entry point
-│   ├── data_processing/     # Core processing modules
-│   ├── mcp_server/         # MCP server implementation
-│   └── utils/              # Helper functions
-├── incoming/               # Input documents (auto-created)
-├── output/                # Generated training data
-└── requirements.txt       # Dependencies
+│   ├── main.py                      # CLI entry point (legacy)
+│   ├── main_langchain.py            # CLI entry point (LangChain)
+│   ├── data_processing/             # Legacy processing modules
+│   │   ├── preprocess.py            # Original document processor
+│   │   └── qa_generator.py          # Original Q&A generator
+│   ├── langchain_processing/        # Enhanced LangChain modules
+│   │   ├── document_loaders.py      # LangChain document loaders
+│   │   ├── text_splitters.py        # Enhanced text splitting
+│   │   ├── llm_providers.py         # Unified LLM interface
+│   │   ├── qa_chains.py             # Q&A generation chains
+│   │   └── processors.py            # Main orchestrator
+│   ├── mcp_server/                  # MCP server implementation
+│   └── utils/                       # Helper functions
+├── incoming/                        # Input documents (auto-created)
+├── output/                         # Generated training data
+└── requirements.txt                # Dependencies (includes LangChain)
 ```
 
 ## Environment Configuration
@@ -141,9 +209,58 @@ The application supports multiple LLM providers with automatic fallback:
 
 JSON structure with metadata, document info, and training pairs with full source traceability including chunk positions and file references.
 
+## LangChain Integration Benefits
+
+### Key Improvements Over Legacy Implementation
+
+**Unified Interface**
+- Single, consistent API for all LLM providers
+- Standardized error handling and retry mechanisms
+- Built-in rate limiting and request management
+
+**Enhanced Document Processing**
+- Specialized loaders for different file formats
+- Better metadata extraction and preservation
+- Improved error handling for corrupted documents
+
+**Advanced Text Splitting**
+- Multiple splitting strategies (recursive, semantic, format-aware)
+- Hierarchical splitting with context preservation
+- Configurable overlap and chunk size management
+
+**Robust Q&A Generation**
+- Structured output parsing with validation
+- Fallback mechanisms for malformed responses
+- Batch processing capabilities for efficiency
+
+**Better Observability**
+- Comprehensive logging and monitoring
+- Configuration introspection and validation
+- Quality metrics and processing statistics
+
+### Migration Path
+
+**For New Projects**: Use `main_langchain.py` for all new implementations
+**For Existing Projects**: Legacy `main.py` remains fully functional
+**Gradual Migration**: Components can be migrated incrementally
+
+### LangChain-Specific Features
+
+```bash
+# Use different splitting strategies
+python src/main_langchain.py --splitting-strategy markdown --chunk-size 1500
+
+# Enable batch processing for better performance
+python src/main_langchain.py --batch-processing --questions-per-chunk 5
+
+# Monitor processing with detailed configuration
+python src/main_langchain.py --show-config
+```
+
 ## Development Notes
 
 - No formal test suite - use `example_usage.py` for validation
 - Error handling includes provider-specific troubleshooting messages
-- Supports batch processing of multiple documents
+- Supports batch processing of multiple documents (enhanced in LangChain version)
 - Automatic sample document creation when incoming directory is empty
+- LangChain implementation provides superior error handling and observability

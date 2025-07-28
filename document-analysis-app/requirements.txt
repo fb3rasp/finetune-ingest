@@ -16,9 +16,17 @@ openai
 google-generativeai
 anthropic
 ollama
-# MCP Server dependencies
-mcp
-pydantic
+# LangChain dependencies
+langchain
+langchain-community
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-ollama
+unstructured
+# MCP Server dependencies (optional - for MCP server functionality)
+# mcp>=1.0.0  # Uncomment if MCP server functionality is needed
+pydantic>=2.0.0
 # Additional utilities
 pathlib2
 python-dotenv

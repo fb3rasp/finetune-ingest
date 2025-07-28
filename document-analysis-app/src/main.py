@@ -3,9 +3,13 @@ import argparse
 from pathlib import Path
 from dotenv import load_dotenv
 
+# Legacy imports - keeping for backward compatibility
 from data_processing.preprocess import DocumentProcessor
 from data_processing.qa_generator import QAGenerator, LLMProvider
 from utils.helpers import log_message, save_results
+
+# New LangChain imports - uncomment to switch to LangChain implementation
+# from langchain_processing import LangChainProcessor, UnifiedLLMProvider, LLMProvider as LCLLMProvider
 
 def main():
     # Load environment variables
@@ -67,7 +71,8 @@ def main():
         return
     
     log_message("Initializing Document Analysis App for Training Data Generation...")
-    log_message(f"Using provider: {args.provider}")
+    log_message(f"Using provider: {args.provider} (Legacy Implementation)")
+    log_message("Note: For enhanced LangChain features, use main_langchain.py")
     
     # Initialize components
     processor = DocumentProcessor(args.incoming_dir)
