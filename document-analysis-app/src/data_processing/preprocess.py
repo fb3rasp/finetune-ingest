@@ -255,19 +255,19 @@ class DocumentProcessor:
 
 
 # Legacy functions for backward compatibility
-def extract_text_from_document(file_path):
-    """Legacy function - use DocumentProcessor class instead."""
-    processor = DocumentProcessor()
-    text, _ = processor.extract_text_from_document(Path(file_path))
-    return text
+# def extract_text_from_document(file_path):
+#     """Legacy function - use DocumentProcessor class instead."""
+#     processor = DocumentProcessor()
+#     text, _ = processor.extract_text_from_document(Path(file_path))
+#     return text
 
-def normalize_text(text):
-    """Legacy function - use DocumentProcessor class instead."""
-    processor = DocumentProcessor()
-    return processor.normalize_text(text)
+# def normalize_text(text):
+#     """Legacy function - use DocumentProcessor class instead."""
+#     processor = DocumentProcessor()
+#     return processor.normalize_text(text)
 
-def preprocess_document(file_path):
-    """Legacy function - use DocumentProcessor class instead."""
-    processor = DocumentProcessor()
-    result = processor.preprocess_document(Path(file_path))
-    return result['full_text'] if result else ""
+# def preprocess_document(file_path):
+#     """Legacy function - use DocumentProcessor class instead."""
+#     processor = DocumentProcessor()
+#     result = processor.preprocess_document(Path(file_path))
+#     return result['full_text'] if result else ""
