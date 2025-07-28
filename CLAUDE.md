@@ -104,6 +104,28 @@ python src/validate_qa.py --input training_data.json --show-details
 python src/validate_qa.py --list-providers --input dummy
 ```
 
+### Automated Processing Pipeline
+
+```bash
+# Complete automated pipeline: process documents + validate with Claude Sonnet
+./process_and_validate.sh
+
+# Dry run to see what would be executed
+./process_and_validate.sh --dry-run
+
+# Custom configuration
+./process_and_validate.sh --questions-per-chunk 7 --validation-threshold 7.5
+
+# Skip validation (only process documents)
+./process_and_validate.sh --skip-validation
+
+# Quiet mode for automated workflows
+./process_and_validate.sh --quiet
+
+# Show help with all options
+./process_and_validate.sh --help
+```
+
 ## Architecture Overview
 
 ### Legacy Components (Original Implementation)
@@ -175,6 +197,15 @@ python src/validate_qa.py --list-providers --input dummy
 4. Output saved as structured JSON with full source traceability
 5. **QAValidator validates generated pairs for factual accuracy** (optional)
 6. **Filtered high-quality training data exported** (optional)
+
+### Automated Pipeline Data Flow
+
+1. **./process_and_validate.sh** → Complete automation
+2. Documents in `./incoming/` → Processing
+3. Raw training data → `./processing/raw_data/`
+4. Validation with Claude Sonnet → `./processing/reports/`
+5. Filtered high-quality data → `./processing/validated_data/`
+6. Pipeline logs → `./processing/logs/`
 
 ### Directory Structure
 
