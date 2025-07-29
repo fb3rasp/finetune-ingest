@@ -1,0 +1,1405 @@
+{
+  "validation_metadata": {
+    "validator_model": "claude:claude-3-5-sonnet-20241022",
+    "validation_timestamp": "2025-07-28T23:06:12.875201",
+    "total_qa_pairs": 63,
+    "validation_threshold": 8.0,
+    "source_file": "training_data.json"
+  },
+  "summary_statistics": {
+    "total_qa_pairs": 63,
+    "pass_count": 56,
+    "needs_review_count": 5,
+    "fail_count": 2,
+    "pass_rate": 0.8888888888888888,
+    "average_scores": {
+      "overall": 9.26,
+      "factual_accuracy": 9.48,
+      "completeness": 8.67,
+      "consistency": 9.6
+    },
+    "total_processing_time": 213.930386
+  },
+  "validation_results": [
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk0_0",
+      "question": "When was the policy about title fees waiving and refunding implemented?",
+      "answer": "The policy was implemented on 7 September 2020",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 0,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [],
+        "recommendations": [
+          "Could mention this is from LINZ OP O 01249 document for additional context"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.437181
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk0_0",
+      "question": "What government organization issued this policy document?",
+      "answer": "The Office of Registrar-General of Land (LINZ) issued this policy document, with reference number OP O 01249",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 0,
+      "validation_score": {
+        "factual_accuracy_score": 8,
+        "completeness_score": 9,
+        "consistency_score": 9,
+        "overall_score": 8.5,
+        "issues_found": [
+          "The answer implies LINZ and Office of Registrar-General of Land are the same entity, which isn't explicitly clear from source",
+          "The reference number format could be more precisely stated as 'LINZ OP O 01249'"
+        ],
+        "recommendations": [
+          "Separate LINZ and Office of Registrar-General of Land unless their relationship is explicitly stated in source",
+          "Include exact reference number format as shown in source"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 5.970306
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk0_0",
+      "question": "What appears to be the main purpose of this policy document?",
+      "answer": "The main purpose appears to be establishing guidelines for waiving and refunding title fees, as indicated by the policy title",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 0,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 7,
+        "consistency_score": 10,
+        "overall_score": 9.1,
+        "issues_found": [
+          "Answer is limited to just restating the title",
+          "No mention of it being from Office of Registrar-General of Land"
+        ],
+        "recommendations": [
+          "Could mention this is from the Office of Registrar-General of Land",
+          "Could include the policy reference number LINZ OP O 01249"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.714797
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk1_0",
+      "question": "What authority figure is responsible for this policy according to the document?",
+      "answer": "The Registrar-General of Land has authority over this policy",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 10,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [],
+        "recommendations": [
+          "Could mention this is from the 2020 policy document for additional context"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.870482
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk1_0",
+      "question": "How long is this policy meant to be in effect before review?",
+      "answer": "The policy is set for review after 5 years from its implementation date of September 7, 2020",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 10,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.554528
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk1_0",
+      "question": "What specific legislation provides the legal basis for this policy?",
+      "answer": "The policy is based on Section 231(3) of the Land Transfer Act 2017",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 10,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.974579
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_0",
+      "question": "What are the main sections covered in this policy document's contents?",
+      "answer": "The policy document contains four main sections: About this policy, Purpose, Definitions and terms, Context, and Statutory Matters, all appearing on page 2 of 8",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 20,
+      "validation_score": {
+        "factual_accuracy_score": 9,
+        "completeness_score": 10,
+        "consistency_score": 9,
+        "overall_score": 9.3,
+        "issues_found": [
+          "The answer states 'appearing on page 2 of 8' which is an inference not explicitly stated in the source text"
+        ],
+        "recommendations": [
+          "Remove the page reference unless explicitly stated in source",
+          "Consider listing sections with their corresponding numbering (1, 1.1, 1.2, etc.) as shown in source"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 4.813029
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_0",
+      "question": "How is this policy document structured in terms of its numbering system?",
+      "answer": "The document uses a hierarchical numbering system starting with section 1 (About this policy) and continuing with subsections 1.1 through 1.4 for Purpose, Definitions and terms, Context, and Statutory Matters",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 20,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could mention that the numbering starts on page 3 according to the source",
+          "Could specify that the numbers shown are from the table of contents"
+        ],
+        "recommendations": [
+          "Add that this is from the Contents/Table of Contents section",
+          "Include page number reference for additional context"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.688123
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_0",
+      "question": "What can we infer about the purpose of this document based on its title and structure?",
+      "answer": "This appears to be a formal policy document from 2020 that outlines the rules and procedures for waiving and refunding title fees, with a structured approach covering definitions, context, and legal requirements",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 20,
+      "validation_score": {
+        "factual_accuracy_score": 9,
+        "completeness_score": 8,
+        "consistency_score": 9,
+        "overall_score": 8.7,
+        "issues_found": [
+          "Limited source text available to fully verify all claims",
+          "Specific details about rules and procedures not visible in provided excerpt"
+        ],
+        "recommendations": [
+          "Could mention it's an 8-page document based on 'Page 2 of 8' notation",
+          "Could be more tentative about procedural details since full content not visible"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.25799
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_1",
+      "question": "What sections are listed between 1.4 and 2.1 in this document's structure?",
+      "answer": "The sections listed are: 1.4 Statutory Matters, 1.5 Policy Objective, 1.6 Status of examples, 1.7 Application of this policy, 2. The Policies, and 2.1 Title fees may be waived or refunded",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 21,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.062739
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_1",
+      "question": "How is the document organized in terms of numbering structure?",
+      "answer": "The document uses a hierarchical decimal numbering system, starting with major sections (1.x) and progressing to subsections (2.x), with each section having a descriptive title following the number",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 21,
+      "validation_score": {
+        "factual_accuracy_score": 9,
+        "completeness_score": 8,
+        "consistency_score": 9,
+        "overall_score": 8.7,
+        "issues_found": [
+          "Limited sample size in source text to fully verify all numbering patterns",
+          "Could be more specific about the exact format of subsections shown (1.4-1.7 and 2.1)"
+        ],
+        "recommendations": [
+          "Include mention that sections are followed by page numbers",
+          "Note that titles are separated from numbers by periods/dots"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.735748
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_1",
+      "question": "What appears to be the main policy topic discussed in section 2.1?",
+      "answer": "Section 2.1 addresses the waiving or refunding of title fees, suggesting this is a policy document related to fee management",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 21,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [],
+        "recommendations": [
+          "Could mention this appears to be from a policy document's table of contents",
+          "Could note this is section 2.1 specifically"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.410005
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_2",
+      "question": "What are the main circumstances under which title fees can be waived or refunded according to the text?",
+      "answer": "Title fees can be waived or refunded in several situations: when a service should have been free, when the purchased service wasn't required, when charging a fee isn't justified, when multiple fees are unreasonably charged, when correcting LINZ errors, and when an instrument is withdrawn before registration.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 22,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer accurately reflects all circumstances listed in source text"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.046908
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_2",
+      "question": "How does the text organize different scenarios for fee adjustments?",
+      "answer": "The text organizes scenarios in seven numbered sections (2.1 through 2.7), each addressing a specific circumstance where fees might be waived or refunded, with corresponding page numbers ranging from 5 to 8.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 22,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could have mentioned the specific topics of each section rather than just the numbering structure"
+        ],
+        "recommendations": [
+          "Could enhance by briefly summarizing the types of fee adjustments covered (e.g., waived fees, refunds, error corrections)",
+          "Could mention that sections appear to be organized by different scenarios/justifications for fee adjustments"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 4.507509
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_2",
+      "question": "Why might someone need to refer to section 2.6 specifically?",
+      "answer": "Someone would refer to section 2.6 if they need information about fee adjustments related to correcting an error or omission made by LINZ (Land Information New Zealand).",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 22,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 8,
+        "consistency_score": 10,
+        "overall_score": 9.4,
+        "issues_found": [
+          "Answer could provide more context about what types of fees might be involved"
+        ],
+        "recommendations": [
+          "Could mention this appears to be from a fee-related document or guideline",
+          "Could clarify this is likely about fee adjustments or refunds related to LINZ errors"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.541376
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_3",
+      "question": "What are the two main sections covered in points 2.7 and 2.8 of this text?",
+      "answer": "The two main sections cover the withdrawal of instruments before registration or notation (2.7) and maintaining the integrity of title to estates and interests in land (2.8).",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 23,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.068587
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_3",
+      "question": "Why would it be important to have procedures for withdrawing instruments before registration?",
+      "answer": "Having procedures for withdrawing instruments before registration helps maintain legal and administrative order in land registry systems, preventing incomplete or incorrect registrations from being processed.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 23,
+      "validation_score": {
+        "factual_accuracy_score": 5,
+        "completeness_score": 4,
+        "consistency_score": 6,
+        "overall_score": 4.9,
+        "issues_found": [
+          "Answer makes claims not supported by the limited source text",
+          "Source text only shows section headings without content",
+          "Claims about maintaining legal/administrative order are assumptions"
+        ],
+        "recommendations": [
+          "Answer should only make claims directly supported by source content",
+          "Need more source text to make substantive claims about procedures",
+          "Be more conservative in extrapolating beyond what source text actually states"
+        ],
+        "validation_status": "FAIL"
+      },
+      "processing_time": 4.240528
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk2_3",
+      "question": "How does maintaining the integrity of title to estates relate to land administration?",
+      "answer": "Maintaining title integrity is fundamental to land administration as it ensures the reliability and accuracy of property ownership records and protects the legal interests of landholders.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 23,
+      "validation_score": {
+        "factual_accuracy_score": 3,
+        "completeness_score": 4,
+        "consistency_score": 5,
+        "overall_score": 3.7,
+        "issues_found": [
+          "Answer makes claims not supported by the limited source text",
+          "Source text only shows section headings without content",
+          "Claims about reliability and protection of legal interests cannot be verified from source"
+        ],
+        "recommendations": [
+          "Answer should only make claims that can be directly supported by the source text",
+          "Need more source content to make substantive claims about title integrity",
+          "Limit answer scope to what is explicitly stated in source material"
+        ],
+        "validation_status": "FAIL"
+      },
+      "processing_time": 3.873693
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk3_0",
+      "question": "What is the primary purpose of this policy document?",
+      "answer": "This regulatory policy is designed to guide the Registrar on when title fees can be waived or refunded, either partially or in full.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 30,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 1.688368
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk3_0",
+      "question": "How does this policy define a 'customer' and what services are they associated with?",
+      "answer": "A customer is defined as either a natural person or organization who has purchased services provided under the Land Transfer Act (LTA) or Land Transfer Regulations (LTR).",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 30,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 1.790005
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk3_0",
+      "question": "What's the relationship between 'estate or interest' and 'dealing' according to the definitions?",
+      "answer": "An estate or interest refers to any estate or interest in land, including mortgages or charges, while dealing specifically refers to transactions involving these estates and interests in land.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 30,
+      "validation_score": {
+        "factual_accuracy_score": 7,
+        "completeness_score": 6,
+        "consistency_score": 8,
+        "overall_score": 7.0,
+        "issues_found": [
+          "The answer makes assumptions about the relationship that aren't explicitly stated in the source text",
+          "The source text only provides separate definitions but doesn't directly explain their relationship"
+        ],
+        "recommendations": [
+          "Stick more closely to the exact definitions provided in the source text",
+          "Acknowledge that the relationship between the terms is not explicitly defined in the source",
+          "Consider using 'as defined in the source' language to avoid assumptions"
+        ],
+        "validation_status": "NEEDS_REVIEW"
+      },
+      "processing_time": 3.341487
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk3_1",
+      "question": "What is LINZ and how does it relate to the Land Transfer Act?",
+      "answer": "LINZ stands for Land Information New Zealand, and it operates within the framework of the Land Transfer Act 2017 (LTA), which provides the legal basis for land registration and transfer in New Zealand.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 31,
+      "validation_score": {
+        "factual_accuracy_score": 7,
+        "completeness_score": 5,
+        "consistency_score": 8,
+        "overall_score": 6.7,
+        "issues_found": [
+          "The source text only shows LINZ as an acronym definition without explaining its role",
+          "The relationship between LINZ and LTA is inferred rather than explicitly stated in source",
+          "Claims about LINZ's operational role are not supported by the source text"
+        ],
+        "recommendations": [
+          "Limit answer to only what's explicitly stated in source text",
+          "Remove unsupported claims about LINZ's operational role",
+          "Acknowledge limited information available in source about LINZ-LTA relationship"
+        ],
+        "validation_status": "NEEDS_REVIEW"
+      },
+      "processing_time": 4.439979
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk3_1",
+      "question": "Can you explain what happens when a titles resubmission fee is charged?",
+      "answer": "A titles resubmission fee is charged when an instrument that has been previously requisitioned or rejected needs to be re-submitted, as specified under section 37 of the Land Transfer Act.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 31,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 8,
+        "consistency_score": 10,
+        "overall_score": 9.4,
+        "issues_found": [
+          "Could provide more context about what 'requisitioned' means",
+          "Could explain the fee amount/structure"
+        ],
+        "recommendations": [
+          "Add explanation of what requisition means in this context",
+          "Include information about fee structure if available in other source materials"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.996623
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk3_1",
+      "question": "What's the difference between a Title fee and a Titles resubmission fee?",
+      "answer": "A Title fee is any fee payable under the Land Transfer Act, while a Titles resubmission fee is specifically charged only when an instrument must be re-submitted after being requisitioned or rejected.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 31,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.142052
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk4_0",
+      "question": "What is the main principle that underpins the fee waiver policies according to the text?",
+      "answer": "The main principle is that customers should not have to pay fees where it is either unreasonable/unfair or necessary to maintain the integrity of title to estates and interests in land, and where the LTA permits the fee to be waived or refunded.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 40,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.589606
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk4_0",
+      "question": "How does the text define a 'waiver' in the context of title fees?",
+      "answer": "A waiver is defined as dispensing with the payment of a fee in accordance with section 229(3) of the LTA or regulation 23 of the LTR.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 40,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - the answer perfectly matches the source text's definition"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.662681
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk4_0",
+      "question": "What authority does the Registrar have regarding fees according to Section 229(3) of the LTA?",
+      "answer": "The Registrar has the authority to either dispense with payment of all or any part of a fee payable under the Act, or refund all or any part of a fee that has already been paid under the Act.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 40,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer perfectly matches source text"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.78885
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk4_1",
+      "question": "What is the primary policy objective described in the text?",
+      "answer": "The primary policy objective is to provide a system of principles to guide decision making when considering waivers and refunds of title fees, based on judgements typically applied under normal business conditions.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 41,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer perfectly matches source text"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.559888
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk4_1",
+      "question": "How do Regulation 23 of the LTR and Section 229(3) of the Act relate to each other?",
+      "answer": "Regulation 23 of the LTR refers to Section 229(3) of the Act regarding the authority to dispense with or refund all or part of fees paid for withdrawn instruments.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 41,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 8,
+        "consistency_score": 10,
+        "overall_score": 9.4,
+        "issues_found": [
+          "Could provide more detail about the specific context of withdrawn instruments"
+        ],
+        "recommendations": [
+          "Could mention that this is specifically in the context of withdrawing instruments after lodgement",
+          "Could clarify that this is part of a broader policy framework for fee waivers and refunds"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.392306
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk4_1",
+      "question": "Why might there be a need for guidelines on fee waivers and refunds?",
+      "answer": "The text suggests that decision-making regarding fee waivers and refunds needs to be guided by consistent principles, ensuring that judgments are applied systematically under normal business conditions rather than being made arbitrarily.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 41,
+      "validation_score": {
+        "factual_accuracy_score": 9,
+        "completeness_score": 8,
+        "consistency_score": 9,
+        "overall_score": 8.7,
+        "issues_found": [
+          "Could have directly quoted 'system of principles' from source text",
+          "Minor omission of explicit reference to 'policy objective' context"
+        ],
+        "recommendations": [
+          "Include direct quote from policy objective section",
+          "Mention this is specifically stated as a policy objective in the source"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.388004
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk5_0",
+      "question": "What are the four specific circumstances under which title fees may be waived or refunded according to the policy?",
+      "answer": "According to section 2.1, title fees may be waived or refunded when: 1) a service is supposed to be free of charge, 2) a customer purchases an unnecessary service based on LINZ guidance, 3) the amount of work doesn't justify charging a fee, and 4) charging multiple fees in a particular case would be unreasonable.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 50,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer perfectly matches source text"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.330992
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk5_0",
+      "question": "How do the examples in this policy document function, and what limitations do they have?",
+      "answer": "According to section 1.6, examples in the policy only serve to illustrate the provisions they relate to and do not limit those provisions in any way.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 50,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could have included the exact quote from section 1.6 for maximum precision"
+        ],
+        "recommendations": [
+          "Consider using direct quotes when summarizing policy language",
+          "Could mention this is from section 1.6 of the policy document"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.177259
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk5_0",
+      "question": "Who does this policy apply to and under what legal framework?",
+      "answer": "The policy applies to all fees payable under the LTA and to persons, classes of persons, and office holders who have been delegated powers and duties under section 229(3) of the LTA and regulation 23 of the LTR.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 50,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 1.638726
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk5_1",
+      "question": "What is the policy regarding fees that were incorrectly charged for services that should have been free?",
+      "answer": "If a customer has been charged a fee for a service that should have been free, and less than 21 working days have elapsed since the charge, the policy states that the fee will be waived or refunded.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 51,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 7,
+        "consistency_score": 10,
+        "overall_score": 9.1,
+        "issues_found": [
+          "Answer omits the policy that fees will be waived if a customer is about to be charged for a service that should be free"
+        ],
+        "recommendations": [
+          "Include both scenarios from the source: (1) when a fee is about to be charged and (2) when a fee has already been charged",
+          "Mention that these are just two specific scenarios where fees should be waived/refunded"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 4.094416
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk5_1",
+      "question": "Under what circumstances would LINZ waive fees according to the text?",
+      "answer": "LINZ would waive fees when: the amount of work doesn't justify charging a fee, multiple fees would be unreasonable, LINZ is correcting their own error, a customer withdraws an instrument before registration, or when necessary to maintain land title integrity.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 51,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 8,
+        "consistency_score": 10,
+        "overall_score": 9.4,
+        "issues_found": [
+          "Does not mention the policy about waiving fees for services that are supposed to be free",
+          "Does not mention the 21 working day window for refunds on incorrectly charged fees"
+        ],
+        "recommendations": [
+          "Include information about waiving fees for services that should be free",
+          "Add detail about the 21-day refund policy for incorrectly charged fees"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.979456
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk5_1",
+      "question": "How does the policy handle situations where a customer is about to be charged for a service that should be free?",
+      "answer": "The policy states that if a customer is to be charged a fee for a service which is supposed to be provided free of charge, the fee will be waived before the charge occurs.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 51,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 8,
+        "consistency_score": 10,
+        "overall_score": 9.4,
+        "issues_found": [
+          "Could include additional context about the 21-day refund policy"
+        ],
+        "recommendations": [
+          "Consider mentioning that if a fee is incorrectly charged, it can be waived/refunded within 21 working days",
+          "Could clarify that this is part of a broader fee waiver policy"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 6.544077
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_0",
+      "question": "What are the conditions required for waiving a titles resubmission fee?",
+      "answer": "A titles resubmission fee can be waived when two conditions are met: 1) the fee is specifically a titles resubmission fee, and 2) the instrument being re-submitted has a nil registration or lodgement fee in the fee schedule. This is exemplified by the case of a re-submitted Gazette notice.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 60,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.482842
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_0",
+      "question": "How long do customers have to request a refund for a service they don't require?",
+      "answer": "Customers have 21 working days from when the title fee was charged to request a refund for a service they don't require, provided they acted on LINZ guidance.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 60,
+      "validation_score": {
+        "factual_accuracy_score": 9,
+        "completeness_score": 8,
+        "consistency_score": 9,
+        "overall_score": 8.7,
+        "issues_found": [
+          "Could mention that this is specifically about title fees",
+          "Could clarify that the 21 working days is a consideration factor, not a strict rule"
+        ],
+        "recommendations": [
+          "Add that this is specifically about title fees",
+          "Clarify that the timeframe is one of multiple factors the Registrar considers"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.380366
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_0",
+      "question": "What factors does the Registrar consider when determining whether to waive or refund a fee for an unnecessary service?",
+      "answer": "The Registrar considers two main factors: 1) the extent to which LINZ's guidance contributed to the customer's purchase of the service, and 2) whether it was reasonable for the customer to rely on the guidance provided by LINZ. However, these considerations are not limited to just these factors.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 60,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could mention the 21 working day time limit that applies"
+        ],
+        "recommendations": [
+          "Add that this policy only applies when less than 21 working days have elapsed since the fee was charged",
+          "Could explicitly state that these are considerations the Registrar 'will ordinarily consider' per source text"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.953422
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_1",
+      "question": "What factors does LINZ consider when evaluating customer refund requests?",
+      "answer": "LINZ considers three main factors: the extent of guidance provided to the customer, whether customer reliance on that guidance was reasonable, and the extent to which the customer benefited from the service.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 61,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 8,
+        "consistency_score": 10,
+        "overall_score": 9.4,
+        "issues_found": [
+          "Could mention that these factors are specifically for evaluating refunds/fees, not general customer requests",
+          "Does not mention the additional policy about waiving fees when work amount doesn't justify charging"
+        ],
+        "recommendations": [
+          "Add context that these factors relate specifically to refund/fee decisions",
+          "Include the policy about waiving fees when work amount doesn't justify the charge"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 4.74605
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_1",
+      "question": "Why might the Registrar deny a refund request, based on the example provided?",
+      "answer": "The Registrar might deny a refund if it was unreasonable for the customer to rely on the guidance, as shown in the example where a customer relied on an outdated LINZ pamphlet to make their purchase decision.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 61,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 8,
+        "consistency_score": 10,
+        "overall_score": 9.4,
+        "issues_found": [
+          "Could have mentioned this was specifically about a title fee refund",
+          "Could have elaborated that this was one of multiple factors considered in refund decisions"
+        ],
+        "recommendations": [
+          "Specify that this relates to title fee refunds specifically",
+          "Could mention that reasonableness of reliance is one of several factors considered (as shown in sections a-c)"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 4.010204
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_1",
+      "question": "Under what circumstances can a title fee be waived?",
+      "answer": "A title fee can be waived if the Registrar determines that the amount of work involved in a particular case does not justify charging the fee. This is a policy-based decision that can apply to various circumstances.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 61,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 7,
+        "consistency_score": 10,
+        "overall_score": 9.1,
+        "issues_found": [
+          "Answer omits that this is specifically stated as a policy in the source text",
+          "Could include mention that circumstances are not limited to specific cases"
+        ],
+        "recommendations": [
+          "Add that this is explicitly stated as a policy",
+          "Mention that the circumstances where fees can be waived are not limited to specific cases",
+          "Could provide more context about the Registrar's role in making this determination"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 5.516669
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_2",
+      "question": "In what circumstances can a title fee be waived according to this text?",
+      "answer": "A title fee can be waived when the amount of work required doesn't justify charging the fee, specifically in cases where an instrument code in an electronic document needs correction or when instruments need to be re-ordered for registration.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 62,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "Could optionally include the example provided in the source text to further illustrate the point"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.48176
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_2",
+      "question": "Why did the Registrar waive the fee in the example provided?",
+      "answer": "The Registrar waived the titles resubmission fee because only a simple correction of an incorrect instrument code was needed, while the document's image was correct, and the amount of work required for this minor change didn't justify charging the fee.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 62,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.019639
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk6_2",
+      "question": "What are the two specific circumstances mentioned that may not justify a title fee?",
+      "answer": "The two specific circumstances mentioned are: 1) when an instrument code in an electronic document needs to be corrected, and 2) when instruments need to be re-ordered to enable registration.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 62,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.767005
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_0",
+      "question": "What is the policy regarding multiple title fees charged to a customer?",
+      "answer": "The policy states that if multiple title fees are deemed unreasonable in a particular case, only the fee of the highest amount will be charged, and the remaining fees will be waived.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 70,
+      "validation_score": {
+        "factual_accuracy_score": 8,
+        "completeness_score": 7,
+        "consistency_score": 9,
+        "overall_score": 7.9,
+        "issues_found": [
+          "Does not mention the 21 working days timeframe specified in the source",
+          "Does not distinguish between charging and refunding scenarios"
+        ],
+        "recommendations": [
+          "Include the 21 working days policy detail",
+          "Specify that fees can be either waived or refunded depending on timing",
+          "Add that this applies both to new charges and recent past charges"
+        ],
+        "validation_status": "NEEDS_REVIEW"
+      },
+      "processing_time": 4.70748
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_0",
+      "question": "How does the refund timeframe affect the handling of multiple title fees?",
+      "answer": "If less than 21 working days have elapsed since the last fee was charged, the highest fee must be paid while the remaining fees will be waived or refunded. After 21 working days, different rules may apply.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 70,
+      "validation_score": {
+        "factual_accuracy_score": 9,
+        "completeness_score": 7,
+        "consistency_score": 9,
+        "overall_score": 8.4,
+        "issues_found": [
+          "Does not mention that the policy applies specifically when charging multiple fees is deemed 'unreasonable'",
+          "Does not explain what happens after 21 working days"
+        ],
+        "recommendations": [
+          "Add that this policy only applies when charging multiple fees is deemed 'unreasonable'",
+          "Clarify that the source text does not specify rules for after 21 working days"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.631335
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_0",
+      "question": "Can you explain the example given about waiving resubmission fees?",
+      "answer": "The example describes a situation where an instrument is lodged without required documents but is otherwise correct. Instead of charging a new title fee when returning it to the customer, the Registrar chooses to waive the titles resubmission fee.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 70,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could have mentioned that the instrument was returned because it couldn't be processed without the missing documents"
+        ],
+        "recommendations": [
+          "Include the specific reason for returning the instrument (inability to process without documents) to provide fuller context"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.453969
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_1",
+      "question": "What is LINZ's policy regarding fee waivers when they make an error or omission?",
+      "answer": "When LINZ makes an error or omission, their policy is to waive all or part of the title fee for any service necessary to correct that error. If the fee has already been charged, it will be refunded if less than 21 working days have passed since the charge.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 71,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.624093
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_1",
+      "question": "Why does the Registrar waive the titles resubmission fee in cases of missing documents?",
+      "answer": "The Registrar waives the titles resubmission fee because it would be unreasonable to charge customers both a new title fee and a resubmission fee when they have to resubmit an instrument due to missing documents.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 71,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [],
+        "validation_status": "PASS"
+      },
+      "processing_time": 1.759099
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_1",
+      "question": "What qualifies as an error or omission by LINZ according to the text?",
+      "answer": "While the text doesn't provide an exhaustive list, it specifically mentions that an error or omission includes situations where a dealing is requisitioned due to a mistake made by LINZ. The text notes that these circumstances are not limited to this example.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 71,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could have mentioned that the text specifically addresses fee waiver/refund policies related to LINZ errors"
+        ],
+        "recommendations": [
+          "Could add that fees can be waived or refunded (within 21 working days) when LINZ errors occur",
+          "Could note that this is covered in section 2.6 of the source document"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.625953
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_2",
+      "question": "What are the circumstances where LINZ may waive fees due to their errors or omissions?",
+      "answer": "LINZ may waive fees in two main circumstances: when a dealing is requisitioned due to an error LINZ has made, and when a dealing is requisitioned for a second time by LINZ for items they missed on the first requisition.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 72,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could have included that these circumstances are explicitly listed as examples and not exhaustive ('include but are not limited to')"
+        ],
+        "recommendations": [
+          "Add that these are non-exhaustive examples by using language like 'include but are not limited to'",
+          "Could mention the example provided in the source text to give additional context"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.224537
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_2",
+      "question": "How does the example provided illustrate LINZ's fee waiver policy?",
+      "answer": "The example shows that when LINZ provides incorrect advice leading to an instrument being requisitioned, the Registrar can choose not to charge the customer the titles resubmission fee since the requisition was caused by LINZ's error.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 72,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could have mentioned this is one of multiple circumstances where fees may be waived"
+        ],
+        "recommendations": [
+          "Could add context that this is one example from a broader fee waiver policy",
+          "Could reference that this falls under subclause 3(a) regarding LINZ errors"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.216524
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk7_2",
+      "question": "Why doesn't the Registrar's power to alter the register under section 21 of the LTA qualify as a circumstance for fee waiver?",
+      "answer": "According to subclause 3, while LINZ has various circumstances where they may waive fees for their errors or omissions, the text specifically excludes cases where the Registrar exercises their power to alter the register under section 21 of the LTA.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 72,
+      "validation_score": {
+        "factual_accuracy_score": 8,
+        "completeness_score": 6,
+        "consistency_score": 8,
+        "overall_score": 7.4,
+        "issues_found": [
+          "Answer simply restates the exclusion without explaining why",
+          "Missing analysis of the relationship between fee waivers and register alterations"
+        ],
+        "recommendations": [
+          "Provide explanation of why section 21 LTA powers are treated differently",
+          "Include more context about the distinction between LINZ errors and register alterations"
+        ],
+        "validation_status": "NEEDS_REVIEW"
+      },
+      "processing_time": 3.324772
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_0",
+      "question": "What happens if someone withdraws an instrument before it is registered or noted?",
+      "answer": "According to the policy, all or any part of the title fee will be waived or refunded in accordance with Regulation 23(3) of the LTR when a customer withdraws an instrument before it is noted or registered.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 80,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.048298
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_0",
+      "question": "How does the policy help maintain the integrity of land titles?",
+      "answer": "The policy allows the Registrar to waive title fees when customers provide information necessary to maintain title integrity. This includes preventing fraud and improper dealings, maintaining public confidence in the land titles system, and preserving the integrity of the register and right to claim.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 80,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer accurately reflects source text"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.073512
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_0",
+      "question": "What are the three key aspects of maintaining title integrity according to section 2.8?",
+      "answer": "The three key aspects are: preventing fraud and improper dealings in land, maintaining public confidence in the land titles system, and maintaining the integrity of the register and the right to claim.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 80,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.973947
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_1",
+      "question": "What are the three main objectives mentioned in the beginning of the text?",
+      "answer": "The three main objectives are: preventing fraud and improper dealings in land, maintaining public confidence in the land titles system, and maintaining the integrity of the register and the right to claim compensation under subpart 3 of part 2 of the LTA.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 81,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 10,
+        "consistency_score": 10,
+        "overall_score": 10.0,
+        "issues_found": [],
+        "recommendations": [
+          "None needed - answer is fully accurate and complete"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 4.069247
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_1",
+      "question": "How does the Registrar handle a situation where someone has information about improper land dealings but is hesitant due to fees?",
+      "answer": "The Registrar waives the fee when they are satisfied that the information is necessary to maintain the integrity of title to estates and interests in land, encouraging the customer to provide the information about improper dealings.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 81,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Could have mentioned this is from an example case",
+          "Could have included context about fraud prevention being one of the purposes"
+        ],
+        "recommendations": [
+          "Add context that this comes from an example case",
+          "Consider mentioning this aligns with the purpose of preventing fraud"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.89695
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_1",
+      "question": "Why does the Registrar decline to waive fees in the case of a lost instrument, and what alternative approach is taken?",
+      "answer": "The Registrar declines to waive the fee based on maintaining integrity grounds because it's not a systemic issue. Instead, they elect to waive the fee for lodgement and registration specifically because LINZ lost the original instrument.",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 81,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [
+          "Minor omission of context around why integrity grounds were not applicable"
+        ],
+        "recommendations": [
+          "Could add that the integrity grounds specifically related to 'maintaining the integrity of title to estates and interests in land'",
+          "Could clarify that this was a specific case of LINZ error rather than a systemic issue"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 3.702978
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_2",
+      "question": "What is LINZ's policy regarding fee waivers for correcting errors?",
+      "answer": "The Registrar waives the fee for lodgement and registration of an instrument when it is correcting an error or omission made by LINZ",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 82,
+      "validation_score": {
+        "factual_accuracy_score": 10,
+        "completeness_score": 9,
+        "consistency_score": 10,
+        "overall_score": 9.7,
+        "issues_found": [],
+        "recommendations": [
+          "Could mention this is based on policy 2.6 as noted in source text"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 2.833037
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_2",
+      "question": "Why are estates and interests in land not considered a systemic issue in this context?",
+      "answer": "The text explicitly states that estates and interests in land are not treated as a systemic issue, though it doesn't provide the specific reasoning behind this determination",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 82,
+      "validation_score": {
+        "factual_accuracy_score": 8,
+        "completeness_score": 5,
+        "consistency_score": 9,
+        "overall_score": 7.3,
+        "issues_found": [
+          "Source text does not explain why estates/interests are not systemic",
+          "Answer acknowledges lack of reasoning in source which is accurate but incomplete"
+        ],
+        "recommendations": [
+          "Answer should focus more on what is definitively stated in the source",
+          "Consider noting the context about fee waiver that is provided",
+          "Clarify that this is based on limited source information"
+        ],
+        "validation_status": "NEEDS_REVIEW"
+      },
+      "processing_time": 5.764364
+    },
+    {
+      "qa_pair_id": "waiving_and_refunding_title_fees_policy_2020.pdf_chunk8_2",
+      "question": "How does policy 2.6 relate to fee waivers in this situation?",
+      "answer": "Policy 2.6 appears to be the governing policy that allows the Registrar to waive fees when correcting LINZ errors or omissions",
+      "source_file": "waiving_and_refunding_title_fees_policy_2020.pdf",
+      "chunk_id": 82,
+      "validation_score": {
+        "factual_accuracy_score": 9,
+        "completeness_score": 8,
+        "consistency_score": 9,
+        "overall_score": 8.7,
+        "issues_found": [
+          "Answer could be more specific about the context being fee waivers for lodgement and registration instruments"
+        ],
+        "recommendations": [
+          "Include specific mention that this applies to lodgement and registration instrument fees",
+          "Could directly quote the reference to policy 2.6 from source text for more precision"
+        ],
+        "validation_status": "PASS"
+      },
+      "processing_time": 5.329451
+    }
+  ],
+  "flagged_issues": {
+    "high_priority": [
+      "Does not mention the 21 working day window for refunds on incorrectly charged fees"
+    ],
+    "medium_priority": [
+      "Could have mentioned that the instrument was returned because it couldn't be processed without the missing documents",
+      "Missing analysis of the relationship between fee waivers and register alterations",
+      "Answer acknowledges lack of reasoning in source which is accurate but incomplete"
+    ],
+    "low_priority": [
+      "The answer implies LINZ and Office of Registrar-General of Land are the same entity, which isn't explicitly clear from source",
+      "Does not mention the policy about waiving fees for services that are supposed to be free",
+      "Claims about LINZ's operational role are not supported by the source text",
+      "Could mention that these factors are specifically for evaluating refunds/fees, not general customer requests",
+      "The source text only provides separate definitions but doesn't directly explain their relationship",
+      "Answer simply restates the exclusion without explaining why",
+      "Minor omission of explicit reference to 'policy objective' context",
+      "Could have mentioned the specific topics of each section rather than just the numbering structure",
+      "Could be more specific about the exact format of subsections shown (1.4-1.7 and 2.1)",
+      "Answer omits that this is specifically stated as a policy in the source text",
+      "Could mention that the numbering starts on page 3 according to the source",
+      "Could include mention that circumstances are not limited to specific cases",
+      "Could have mentioned this is one of multiple circumstances where fees may be waived",
+      "Does not mention the 21 working days timeframe specified in the source",
+      "Could have included context about fraud prevention being one of the purposes",
+      "Could mention that this is specifically about title fees",
+      "Answer is limited to just restating the title",
+      "Does not distinguish between charging and refunding scenarios",
+      "Could have mentioned this was specifically about a title fee refund",
+      "The reference number format could be more precisely stated as 'LINZ OP O 01249'",
+      "Could have mentioned this is from an example case",
+      "Limited sample size in source text to fully verify all numbering patterns",
+      "Does not mention that the policy applies specifically when charging multiple fees is deemed 'unreasonable'",
+      "Answer omits the policy that fees will be waived if a customer is about to be charged for a service that should be free",
+      "The source text only shows LINZ as an acronym definition without explaining its role",
+      "Could explain the fee amount/structure",
+      "The answer makes assumptions about the relationship that aren't explicitly stated in the source text",
+      "Could include additional context about the 21-day refund policy",
+      "Could mention the 21 working day time limit that applies",
+      "Does not explain what happens after 21 working days",
+      "Minor omission of context around why integrity grounds were not applicable",
+      "Answer could be more specific about the context being fee waivers for lodgement and registration instruments",
+      "Source text does not explain why estates/interests are not systemic",
+      "The relationship between LINZ and LTA is inferred rather than explicitly stated in source",
+      "Specific details about rules and procedures not visible in provided excerpt",
+      "The answer states 'appearing on page 2 of 8' which is an inference not explicitly stated in the source text",
+      "Could have elaborated that this was one of multiple factors considered in refund decisions",
+      "No mention of it being from Office of Registrar-General of Land",
+      "Could have directly quoted 'system of principles' from source text",
+      "Claims about reliability and protection of legal interests cannot be verified from source",
+      "Could provide more context about what 'requisitioned' means",
+      "Could clarify that the 21 working days is a consideration factor, not a strict rule",
+      "Source text only shows section headings without content",
+      "Limited source text available to fully verify all claims",
+      "Could specify that the numbers shown are from the table of contents",
+      "Could provide more detail about the specific context of withdrawn instruments",
+      "Could have included the exact quote from section 1.6 for maximum precision",
+      "Answer could provide more context about what types of fees might be involved",
+      "Answer makes claims not supported by the limited source text",
+      "Could have mentioned that the text specifically addresses fee waiver/refund policies related to LINZ errors",
+      "Does not mention the additional policy about waiving fees when work amount doesn't justify charging",
+      "Could have included that these circumstances are explicitly listed as examples and not exhaustive ('include but are not limited to')",
+      "Claims about maintaining legal/administrative order are assumptions"
+    ]
+  }
+}

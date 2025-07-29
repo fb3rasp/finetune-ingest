@@ -1,0 +1,56 @@
+{
+  "pipeline_summary": {
+    "timestamp": "20250729_072337",
+    "processing_date": "2025-07-29 07:23:40",
+    "configuration": {
+      "provider": "claude",
+      "model": "claude-3-5-sonnet-20241022",
+      "chunk_size": 1200,
+      "chunk_overlap": 300,
+      "questions_per_chunk": 5,
+      "splitting_strategy": "recursive",
+      "temperature": 0.7,
+      "validation_threshold": 8.0,
+      "filter_threshold": 7.0
+    },
+    "input": {
+      "incoming_directory": "./incoming",
+      "document_count":        2
+    },
+    "outputs": {
+      "raw_training_data": "[0;35m[STEP][0m Processing documents from ./incoming...
+[0;34m[INFO][0m Found        2 documents to process
+[0;34m[INFO][0m Running document processing with enhanced LangChain implementation...
+[0;34m[INFO][0m DRY RUN: Would execute: python src/main.py --provider claude --model claude-3-5-sonnet-20241022 --incoming-dir ./incoming --output-file ./processing/raw_data/training_data_20250729_072337.json --chunk-size 1200 --chunk-overlap 300 --questions-per-chunk 5 --splitting-strategy recursive --temperature 0.7 --batch-processing
+./processing/raw_data/training_data_20250729_072337.json",
+      "validation_report": "[0;35m[STEP][0m Validating training data with Claude Sonnet...
+[0;34m[INFO][0m Validation configuration:
+[0;34m[INFO][0m   Validator: claude (claude-3-5-sonnet-20241022)
+[0;34m[INFO][0m   Pass threshold: 8.0
+[0;34m[INFO][0m   Filter threshold: 7.0
+[0;34m[INFO][0m DRY RUN: Would execute: python src/validate_qa.py --input [0;35m[STEP][0m Processing documents from ./incoming...
+[0;34m[INFO][0m Found        2 documents to process
+[0;34m[INFO][0m Running document processing with enhanced LangChain implementation...
+[0;34m[INFO][0m DRY RUN: Would execute: python src/main.py --provider claude --model claude-3-5-sonnet-20241022 --incoming-dir ./incoming --output-file ./processing/raw_data/training_data_20250729_072337.json --chunk-size 1200 --chunk-overlap 300 --questions-per-chunk 5 --splitting-strategy recursive --temperature 0.7 --batch-processing
+./processing/raw_data/training_data_20250729_072337.json --output ./processing/reports/validation_report_20250729_072337.json --filtered-output ./processing/validated_data/training_data_validated_20250729_072337.json --validator-provider claude --validator-model claude-3-5-sonnet-20241022 --threshold 8.0 --filter-threshold 7.0 --temperature 0.1",
+      "filtered_training_data": "[0;35m[STEP][0m Validating training data with Claude Sonnet...
+[0;34m[INFO][0m Validation configuration:
+[0;34m[INFO][0m   Validator: claude (claude-3-5-sonnet-20241022)
+[0;34m[INFO][0m   Pass threshold: 8.0
+[0;34m[INFO][0m   Filter threshold: 7.0
+[0;34m[INFO][0m DRY RUN: Would execute: python src/validate_qa.py --input [0;35m[STEP][0m Processing documents from ./incoming...
+[0;34m[INFO][0m Found        2 documents to process
+[0;34m[INFO][0m Running document processing with enhanced LangChain implementation...
+[0;34m[INFO][0m DRY RUN: Would execute: python src/main.py --provider claude --model claude-3-5-sonnet-20241022 --incoming-dir ./incoming --output-file ./processing/raw_data/training_data_20250729_072337.json --chunk-size 1200 --chunk-overlap 300 --questions-per-chunk 5 --splitting-strategy recursive --temperature 0.7 --batch-processing
+./processing/raw_data/training_data_20250729_072337.json --output ./processing/reports/validation_report_20250729_072337.json --filtered-output ./processing/validated_data/training_data_validated_20250729_072337.json --validator-provider claude --validator-model claude-3-5-sonnet-20241022 --threshold 8.0 --filter-threshold 7.0 --temperature 0.1",
+      "pipeline_log": "./processing/pipeline.log"
+    },
+    "directories": {
+      "processing": "./processing",
+      "raw_data": "./processing/raw_data",
+      "validated_data": "./processing/validated_data",
+      "reports": "./processing/reports",
+      "logs": "./processing/logs"
+    }
+  }
+}
