@@ -99,6 +99,10 @@ Document Input → Document Loader → Text Splitter → LLM Provider → Q&A Ch
 
    # Google Gemini
    GOOGLE_API_KEY=your_google_api_key_here
+
+    # Ollama (optional, for local models)
+    # Use this if your Ollama server is on a different machine
+    # OLLAMA_BASE_URL=http://192.168.50.133:11434
    ```
 
 5. **For local models (optional)**
@@ -112,6 +116,9 @@ Document Input → Document Loader → Text Splitter → LLM Provider → Q&A Ch
 
    # Pull a model (e.g., Llama 3)
    ollama pull llama3
+
+    # Or pull another model (e.g., Qwen 3 14B)
+    ollama pull qwen3:14b
    ```
 
 ## 🎮 Usage
@@ -130,6 +137,43 @@ python src/main.py --provider claude --model claude-3-5-sonnet-20241022
 
 # Process documents with local model
 python src/main.py --provider local --model llama3
+```
+
+### Ollama (local models) examples
+
+```bash
+# Use local Ollama on the same machine (default base URL http://localhost:11434)
+python src/main.py \
+  --provider local \
+  --model llama3 \
+  --temperature 0.3 \
+  --questions-per-chunk 5 \
+  --batch-processing
+
+# Use a remote/another machine's Ollama instance
+python src/main.py \
+  --provider local \
+  --model qwen3:14b \
+  --ollama-base-url http://192.168.50.133:11434 \
+  --temperature 0.3 \
+  --questions-per-chunk 5 \
+  --batch-processing
+
+# You can also set the base URL via env var instead of the flag
+# export OLLAMA_BASE_URL=http://192.168.50.133:11434
+# python src/main.py --provider local --model qwen3:14b
+
+# Advanced Ollama parameters
+python src/main.py \
+  --provider local \
+  --model llama3 \
+  --ollama-top-k 40 \
+  --ollama-top-p 0.9 \
+  --ollama-repeat-penalty 1.1 \
+  --ollama-num-predict 1024 \
+  --ollama-stop "\n\n" \
+  --ollama-stop "USER:" \
+  --temperature 0.2
 ```
 
 ### Advanced Configuration
