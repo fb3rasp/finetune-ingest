@@ -25,6 +25,7 @@ cp config_example.env .env
 ### Core Application Usage
 
 #### Legacy Implementation (Original)
+
 ```bash
 # Basic training data generation
 python src/main.py --provider openai --model gpt-4
@@ -38,6 +39,7 @@ python src/main.py --provider claude --questions-per-chunk 5 --chunk-size 800 --
 ```
 
 #### LangChain Implementation (Enhanced)
+
 ```bash
 # Basic training data generation with LangChain
 python src/main_langchain.py --provider openai --model gpt-4
@@ -273,26 +275,31 @@ JSON structure with metadata, document info, and training pairs with full source
 ### Key Improvements Over Legacy Implementation
 
 **Unified Interface**
+
 - Single, consistent API for all LLM providers
 - Standardized error handling and retry mechanisms
 - Built-in rate limiting and request management
 
 **Enhanced Document Processing**
+
 - Specialized loaders for different file formats
 - Better metadata extraction and preservation
 - Improved error handling for corrupted documents
 
 **Advanced Text Splitting**
+
 - Multiple splitting strategies (recursive, semantic, format-aware)
 - Hierarchical splitting with context preservation
 - Configurable overlap and chunk size management
 
 **Robust Q&A Generation**
+
 - Structured output parsing with validation
 - Fallback mechanisms for malformed responses
 - Batch processing capabilities for efficiency
 
 **Better Observability**
+
 - Comprehensive logging and monitoring
 - Configuration introspection and validation
 - Quality metrics and processing statistics
