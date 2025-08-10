@@ -1,4 +1,4 @@
-Q&A Data Generator
+# Q&A Data Generator
 
 Usage examples:
 

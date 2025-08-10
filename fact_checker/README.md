@@ -1,4 +1,4 @@
-Fact Checker
+# Fact Checker
 
 Usage examples:
 
