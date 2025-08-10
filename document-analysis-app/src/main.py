@@ -87,6 +87,8 @@ def main():
                        help='Use batch processing for better efficiency')
     parser.add_argument('--structured-output', action='store_true',
                        help='Use structured output parsing (experimental)')
+    parser.add_argument('--resume', action='store_true',
+                       help='Resume from previous run by using cached loads/chunks and existing output file')
     
     # Utility options
     parser.add_argument('--list-models', action='store_true',
@@ -323,7 +325,7 @@ The LangChain integration represents a significant upgrade to the document analy
     log_message(f"Configuration: {args.questions_per_chunk} questions per chunk, "
                f"{args.temperature} temperature, {args.splitting_strategy} splitting")
     
-    training_data = processor.generate_qa_training_data(output_file=args.output_file)
+    training_data = processor.generate_qa_training_data(output_file=args.output_file, resume=args.resume)
     
     if not training_data:
         log_message("No training data was generated")

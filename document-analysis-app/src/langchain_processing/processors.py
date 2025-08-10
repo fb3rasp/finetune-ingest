@@ -15,7 +15,7 @@ from .document_loaders import LangChainDocumentLoader
 from .text_splitters import EnhancedTextSplitter
 from .llm_providers import UnifiedLLMProvider, LLMProvider
 from .qa_chains import QAGenerationChain
-from utils.helpers import log_message
+from utils.helpers import log_message, save_json_atomic, load_json_if_exists
 
 
 class LangChainProcessor:
@@ -97,7 +97,15 @@ class LangChainProcessor:
         
         log_message("LangChain processor initialized successfully")
     
-    def process_single_document(self, file_path: Path) -> Optional[Dict]:
+    def _cache_dir_for(self, file_path: Path) -> Path:
+        """Return cache directory for a given source file (under incoming/.cache)."""
+        base_dir = Path(self.incoming_dir) / ".cache"
+        safe_name = file_path.name + ".cache"
+        cache_dir = base_dir / safe_name
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        return cache_dir
+
+    def process_single_document(self, file_path: Path, resume: bool = False) -> Optional[Dict]:
         """
         Process a single document through the complete pipeline.
         
@@ -110,20 +118,61 @@ class LangChainProcessor:
         try:
             log_message(f"Processing document: {file_path.name}")
             
-            # Load document
-            documents, base_metadata = self.document_loader.load_document(file_path)
-            if not documents:
-                log_message(f"No content loaded from {file_path.name}")
-                return None
-            
-            # Extract enhanced metadata
-            enhanced_metadata = self.document_loader.extract_enhanced_metadata(documents)
-            
-            # Split documents into chunks
-            chunks = self.text_splitter.split_documents(
-                documents, 
-                strategy=self.splitting_strategy
-            )
+            cache_dir = self._cache_dir_for(file_path)
+            docs_cache_path = cache_dir / "documents.json"
+            chunks_cache_path = cache_dir / "chunks.json"
+
+            documents = None
+            enhanced_metadata = None
+            chunks = None
+
+            if resume:
+                cached_docs = load_json_if_exists(str(docs_cache_path))
+                cached_chunks = load_json_if_exists(str(chunks_cache_path))
+                if cached_docs and cached_chunks:
+                    log_message(f"Resuming: using cached load/splits for {file_path.name}")
+                    documents = cached_docs.get("documents")
+                    enhanced_metadata = cached_docs.get("metadata")
+                    chunks = cached_chunks
+
+            if documents is None or enhanced_metadata is None:
+                # Load document fresh
+                documents_obj, base_metadata = self.document_loader.load_document(file_path)
+                if not documents_obj:
+                    log_message(f"No content loaded from {file_path.name}")
+                    return None
+                enhanced_metadata = self.document_loader.extract_enhanced_metadata(documents_obj)
+                # Convert LangChain Document objects to serializable format for cache
+                documents = [
+                    {
+                        "page_content": d.page_content,
+                        "metadata": dict(getattr(d, "metadata", {}))
+                    }
+                    for d in documents_obj
+                ]
+                save_json_atomic({"documents": documents, "metadata": enhanced_metadata}, str(docs_cache_path))
+
+            if chunks is None:
+                # Reconstruct LangChain docs if needed
+                try:
+                    from langchain.schema import Document as LCDocument
+                    documents_reconstructed = [
+                        LCDocument(page_content=d["page_content"], metadata=d.get("metadata", {}))
+                        for d in documents
+                    ]
+                    # Split documents into chunks
+                    chunks = self.text_splitter.split_documents(
+                        documents_reconstructed, 
+                        strategy=self.splitting_strategy
+                    )
+                except Exception:
+                    # Fallback: split concatenated text adaptively
+                    log_message("Falling back to adaptive text splitting for cached documents")
+                    concatenated = "\n\n".join(d.get("page_content", "") for d in documents)
+                    file_type = (enhanced_metadata or {}).get('file_type', '.txt')
+                    chunks = self.text_splitter.split_text_adaptive(concatenated, file_type=file_type)
+
+                save_json_atomic(chunks, str(chunks_cache_path))
             
             if not chunks:
                 log_message(f"No chunks created from {file_path.name}")
@@ -150,7 +199,7 @@ class LangChainProcessor:
             log_message(f"Error processing document {file_path}: {str(e)}")
             return None
     
-    def process_all_documents(self) -> List[Dict]:
+    def process_all_documents(self, resume: bool = False) -> List[Dict]:
         """
         Process all documents in the incoming directory.
         
@@ -167,7 +216,7 @@ class LangChainProcessor:
         processed_documents = []
         
         for file_path in document_files:
-            processed_doc = self.process_single_document(file_path)
+            processed_doc = self.process_single_document(file_path, resume=resume)
             if processed_doc:
                 processed_documents.append(processed_doc)
         
@@ -177,7 +226,8 @@ class LangChainProcessor:
     def generate_qa_training_data(
         self, 
         processed_documents: Optional[List[Dict]] = None,
-        output_file: str = "./training_data.json"
+        output_file: str = "./training_data.json",
+        resume: bool = False
     ) -> Dict:
         """
         Generate complete Q&A training dataset.
@@ -190,7 +240,7 @@ class LangChainProcessor:
             Training data dictionary
         """
         if processed_documents is None:
-            processed_documents = self.process_all_documents()
+            processed_documents = self.process_all_documents(resume=resume)
         
         if not processed_documents:
             log_message("No processed documents available for Q&A generation")
@@ -221,6 +271,24 @@ class LangChainProcessor:
         }
         
         all_qa_pairs = []
+        # Resume support: load existing output if present
+        existing = load_json_if_exists(output_file) if resume else None
+        processed_chunk_keys = set()
+        if existing and isinstance(existing, dict):
+            # preserve previously written pairs and docs metadata
+            all_qa_pairs = existing.get('training_pairs', [])
+            # collect chunk_ids to skip
+            for qa in all_qa_pairs:
+                cid = qa.get('chunk_id')
+                fname = qa.get('file_name')
+                if cid is not None and fname:
+                    processed_chunk_keys.add(f"{fname}::{cid}")
+            # Merge doc-level summaries later; keep existing as base
+            training_data['documents'] = existing.get('documents', [])
+            training_data['metadata'].update({
+                'generated_by': existing.get('metadata', {}).get('generated_by', training_data['metadata']['generated_by']),
+                'generated_at': existing.get('metadata', {}).get('generated_at', training_data['metadata']['generated_at'])
+            })
         
         # Process each document
         for doc in processed_documents:
@@ -230,30 +298,73 @@ class LangChainProcessor:
             
             if self.use_batch_processing:
                 # Use batch processing for better efficiency
+                def _on_chunk_done(pairs_for_chunk: List[Dict]):
+                    # Append and persist incrementally for resume support
+                    nonlocal all_qa_pairs, training_data
+                    all_qa_pairs.extend(pairs_for_chunk)
+                    training_data['training_pairs'] = all_qa_pairs
+                    training_data['metadata']['total_qa_pairs'] = len(all_qa_pairs)
+                    save_json_atomic(training_data, output_file)
+
+                # If resuming, skip already-processed chunks
+                file_name = doc['metadata'].get('file_name')
+                chunks_to_process = [
+                    c for c in doc['chunks']
+                    if not (resume and f"{file_name}::{c.get('chunk_id')}" in processed_chunk_keys)
+                ]
+
                 batch_qa_pairs = self.qa_chain.generate_batch_qa_pairs(
-                    doc['chunks'], 
-                    doc['metadata']
+                    chunks_to_process, 
+                    doc['metadata'],
+                    on_chunk_done=_on_chunk_done
                 )
                 doc_qa_pairs.extend(batch_qa_pairs)
             else:
                 # Process chunks individually
+                file_name = doc['metadata'].get('file_name')
                 for chunk in doc['chunks']:
+                    chunk_id = chunk.get('chunk_id')
+                    if resume and f"{file_name}::{chunk_id}" in processed_chunk_keys:
+                        continue
                     chunk_qa_pairs = self.qa_chain.generate_qa_pairs(
                         chunk, 
                         doc['metadata']
                     )
                     doc_qa_pairs.extend(chunk_qa_pairs)
+                    # Append incrementally and persist so we can resume
+                    if chunk_qa_pairs:
+                        all_qa_pairs.extend(chunk_qa_pairs)
+                        training_data['training_pairs'] = all_qa_pairs
+                        training_data['metadata']['total_qa_pairs'] = len(all_qa_pairs)
+                        save_json_atomic(training_data, output_file)
             
-            all_qa_pairs.extend(doc_qa_pairs)
+            if not self.use_batch_processing:
+                # already extended incrementally
+                pass
+            else:
+                # already extended incrementally via on_chunk_done callback
+                pass
             
-            # Add document summary to training data
-            training_data['documents'].append({
-                'file_info': doc['metadata'],
-                'chunk_count': len(doc['chunks']),
-                'qa_pairs_count': len(doc_qa_pairs),
-                'chunk_statistics': doc.get('chunk_statistics', {}),
-                'processing_info': doc.get('processing_info', {})
-            })
+            # Add/update document summary in training data
+            # Avoid duplicate document summaries on resume and keep counts accurate
+            file_name = doc['metadata'].get('file_name')
+            existing_docs = {d.get('file_info', {}).get('file_name') for d in training_data['documents']}
+            # Compute total pairs for this document across all_qa_pairs
+            total_pairs_for_doc = sum(1 for qa in all_qa_pairs if qa.get('file_name') == file_name)
+            if file_name not in existing_docs:
+                training_data['documents'].append({
+                    'file_info': doc['metadata'],
+                    'chunk_count': len(doc['chunks']),
+                    'qa_pairs_count': total_pairs_for_doc,
+                    'chunk_statistics': doc.get('chunk_statistics', {}),
+                    'processing_info': doc.get('processing_info', {})
+                })
+            else:
+                # Update existing entry's qa_pairs_count
+                for d in training_data['documents']:
+                    if d.get('file_info', {}).get('file_name') == file_name:
+                        d['qa_pairs_count'] = total_pairs_for_doc
+                        break
             
             log_message(f"Generated {len(doc_qa_pairs)} Q&A pairs for {doc['metadata']['file_name']}")
         
@@ -275,8 +386,7 @@ class LangChainProcessor:
         
         # Save training data
         try:
-            with open(output_file, 'w', encoding='utf-8') as f:
-                json.dump(training_data, f, indent=2, ensure_ascii=False)
+            save_json_atomic(training_data, output_file, indent=2, ensure_ascii=False)
             log_message(f"Training data saved to {output_file}")
         except Exception as e:
             log_message(f"Error saving training data: {str(e)}")

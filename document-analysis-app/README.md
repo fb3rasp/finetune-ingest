@@ -208,6 +208,27 @@ python src/main.py --show-config
 python src/validate_qa.py --input-file ./training_data.json
 ```
 
+### Resuming interrupted runs
+
+Long runs can be resumed safely using `--resume`. The app caches document loading and chunking under `incoming/.cache/` and writes `training_data.json` incrementally after each chunk.
+
+```bash
+# Resume processing (reuses cached load/chunks, skips completed chunks)
+python src/main.py \
+  --provider local \
+  --model qwen3:14b \
+  --ollama-base-url http://192.168.50.133:11434 \
+  --temperature 0.3 \
+  --questions-per-chunk 5 \
+  --batch-processing \
+  --resume
+```
+
+Notes:
+
+- Cached files per document live in `incoming/.cache/<filename>.cache/` as `documents.json` and `chunks.json`.
+- The script appends to `training_data.json` after each processed chunk, so restarts skip already completed chunks.
+
 ## 📁 File Organization
 
 ```

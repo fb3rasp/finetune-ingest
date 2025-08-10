@@ -7,7 +7,7 @@ error handling capabilities.
 """
 
 import json
-from typing import Dict, List, Optional, Any
+from typing import Dict, List, Optional, Any, Callable
 try:
     from langchain.chains import LLMChain
     from langchain.prompts import PromptTemplate, ChatPromptTemplate
@@ -342,7 +342,8 @@ JSON Response:"""
         self, 
         chunks: List[Dict], 
         metadata: Dict,
-        max_concurrent: int = 5
+        max_concurrent: int = 5,
+        on_chunk_done: Optional[Callable[[List[Dict]], None]] = None
     ) -> List[Dict]:
         """
         Generate Q&A pairs for multiple chunks in batch.
@@ -391,6 +392,7 @@ JSON Response:"""
                         qa_pairs = self.output_parser.parse(response)
                     
                     # Enhance with metadata
+                    enhanced_for_chunk = []
                     for qa in qa_pairs:
                         enhanced_qa = {
                             'question': qa['question'],
@@ -409,7 +411,13 @@ JSON Response:"""
                                 'chain_type': 'langchain_batch_qa_generation'
                             }
                         }
-                        all_qa_pairs.append(enhanced_qa)
+                        enhanced_for_chunk.append(enhanced_qa)
+                    all_qa_pairs.extend(enhanced_for_chunk)
+                    if on_chunk_done is not None and enhanced_for_chunk:
+                        try:
+                            on_chunk_done(enhanced_for_chunk)
+                        except Exception as cb_e:
+                            log_message(f"on_chunk_done callback error: {cb_e}")
                 
                 log_message(f"Processed batch {i//max_concurrent + 1}, total Q&A pairs: {len(all_qa_pairs)}")
                 
