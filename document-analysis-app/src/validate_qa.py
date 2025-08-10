@@ -47,6 +47,9 @@ def main():
                        help='API key for validator (uses env vars if not specified)')
     parser.add_argument('--temperature', type=float, default=0.1,
                        help='Validation temperature (default: 0.1 for consistency)')
+    # Ollama validator options (for --validator-provider local)
+    parser.add_argument('--ollama-base-url',
+                       help='Base URL for Ollama server used by validator (e.g., http://192.168.1.10:11434)')
     
     # Validation parameters
     parser.add_argument('--threshold', type=float, default=8.0,
@@ -133,13 +136,21 @@ def main():
     
     try:
         # Initialize validator
+        # Build provider kwargs for local/Ollama validator
+        provider_kwargs = {}
+        if args.validator_provider == 'local':
+            base_url = args.ollama_base_url or os.getenv("OLLAMA_BASE_URL")
+            if base_url:
+                provider_kwargs['base_url'] = base_url
+
         validator = QAValidator(
             provider=args.validator_provider,
             model=args.validator_model,
             api_key=args.validator_api_key,
             temperature=args.temperature,
             validation_threshold=args.threshold,
-            batch_size=args.batch_size
+            batch_size=args.batch_size,
+            **provider_kwargs
         )
         
         if not args.quiet:

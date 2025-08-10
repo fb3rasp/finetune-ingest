@@ -124,11 +124,19 @@ class QAGenerationChain:
         self,
         llm_provider: UnifiedLLMProvider,
         questions_per_chunk: int = 3,
-        use_structured_output: bool = False
+        use_structured_output: bool = False,
+        # New: prompt customization
+        system_message: Optional[str] = None,
+        extra_instructions: Optional[str] = None,
+        custom_template: Optional[str] = None
     ):
         self.llm_provider = llm_provider
         self.questions_per_chunk = questions_per_chunk
         self.use_structured_output = use_structured_output
+        self.system_message = system_message
+        self.extra_instructions = extra_instructions or ""
+        self.custom_template = custom_template
+        self.human_template_str = None  # used for batch path
         
         # Initialize output parser
         if use_structured_output:
@@ -140,7 +148,7 @@ class QAGenerationChain:
         else:
             self.output_parser = JSONOutputParser()
         
-        # Create prompt template
+        # Create prompt template(s)
         self.prompt_template = self._create_prompt_template()
         
         # Create the chain
@@ -158,11 +166,15 @@ class QAGenerationChain:
         
         log_message(f"Initialized QA chain with {questions_per_chunk} questions per chunk")
     
-    def _create_prompt_template(self) -> PromptTemplate:
+    def _create_prompt_template(self):
         """Create the Q&A generation prompt template."""
-        if self.use_structured_output:
-            format_instructions = self.pydantic_parser.get_format_instructions()
-            template = """You are an expert at creating high-quality training data for language models. 
+        # Base human prompt template (custom takes precedence)
+        if self.custom_template:
+            template = self.custom_template
+        else:
+            if self.use_structured_output:
+                format_instructions = self.pydantic_parser.get_format_instructions()
+                template = """You are an expert at creating high-quality training data for language models. 
 Based on the following text, generate exactly {num_questions} question-answer pairs that would help train a chatbot to understand and respond about this content.
 
 Guidelines:
@@ -174,14 +186,17 @@ Guidelines:
 6. Vary question types: what, how, why, when, where questions
 7. Include both simple recall and complex reasoning questions
 
+Additional instructions:
+{extra_instructions}
+
 Text to analyze:
 {text}
 
 {format_instructions}
 
 Generate the Q&A pairs:"""
-        else:
-            template = """You are an expert at creating high-quality training data for language models. 
+            else:
+                template = """You are an expert at creating high-quality training data for language models. 
 Based on the following text, generate exactly {num_questions} question-answer pairs that would help train a chatbot to understand and respond about this content.
 
 Guidelines:
@@ -192,6 +207,9 @@ Guidelines:
 5. Answers should be directly supported by the text
 6. Vary question types: what, how, why, when, where questions
 7. Include both simple recall and complex reasoning questions
+
+Additional instructions:
+{extra_instructions}
 
 Text to analyze:
 {text}
@@ -211,18 +229,37 @@ Example format:
 ]
 
 JSON Response:"""
-        
+
+        # Save the human template string for batch formatting
+        self.human_template_str = template
+
+        # Return appropriate PromptTemplate or ChatPromptTemplate
         if self.use_structured_output:
-            return PromptTemplate(
-                template=template,
-                input_variables=["text", "num_questions"],
-                partial_variables={"format_instructions": format_instructions}
-            )
+            if self.system_message:
+                return ChatPromptTemplate.from_messages([
+                    ("system", self.system_message),
+                    ("human", template)
+                ]).partial(extra_instructions=self.extra_instructions,
+                           format_instructions=self.pydantic_parser.get_format_instructions())
+            else:
+                return PromptTemplate(
+                    template=template,
+                    input_variables=["text", "num_questions"],
+                    partial_variables={"extra_instructions": self.extra_instructions,
+                                       "format_instructions": self.pydantic_parser.get_format_instructions()}
+                )
         else:
-            return PromptTemplate(
-                template=template,
-                input_variables=["text", "num_questions"]
-            )
+            if self.system_message:
+                return ChatPromptTemplate.from_messages([
+                    ("system", self.system_message),
+                    ("human", template)
+                ]).partial(extra_instructions=self.extra_instructions)
+            else:
+                return PromptTemplate(
+                    template=template,
+                    input_variables=["text", "num_questions"],
+                    partial_variables={"extra_instructions": self.extra_instructions}
+                )
     
     def generate_qa_pairs(self, chunk: Dict, metadata: Dict) -> List[Dict]:
         """
@@ -257,7 +294,7 @@ JSON Response:"""
                 log_message("Using unstructured output with parsing")
                 # Generate raw response and then parse it
                 raw_response = self.qa_chain.run(input_data)
-                log_message(f"Raw response: {raw_response[:200]}...")
+                # log_message(f"Raw response: {raw_response[:200]}...")
                 qa_pairs = self.output_parser.parse(raw_response)
                 log_message(f"Parsed {len(qa_pairs)} Q&A pairs")
             
@@ -326,16 +363,20 @@ JSON Response:"""
             batch_prompts = []
             
             for chunk in batch_chunks:
-                batch_prompts.append(
-                    self.prompt_template.format(
-                        text=chunk['text'],
-                        num_questions=self.questions_per_chunk
-                    )
+                # Use the raw human template string for batch formatting
+                prompt_text = self.human_template_str.format(
+                    text=chunk['text'],
+                    num_questions=self.questions_per_chunk,
+                    extra_instructions=self.extra_instructions
                 )
+                batch_prompts.append(prompt_text)
             
             try:
-                # Generate batch responses
-                batch_responses = self.llm_provider.batch_generate(batch_prompts)
+                # Generate batch responses (pass system message if present)
+                batch_responses = self.llm_provider.batch_generate(
+                    batch_prompts,
+                    system_message=self.system_message
+                )
                 
                 # Process responses
                 for chunk, response in zip(batch_chunks, batch_responses):

@@ -34,6 +34,10 @@ class LangChainProcessor:
         max_tokens: int = 2000,
         splitting_strategy: str = "recursive",
         use_batch_processing: bool = False,
+        # New: prompt customization
+        qa_system_message: Optional[str] = None,
+        qa_additional_instructions: Optional[str] = None,
+        qa_custom_template: Optional[str] = None,
         **kwargs
     ):
         """
@@ -56,6 +60,9 @@ class LangChainProcessor:
         self.incoming_dir = incoming_dir
         self.splitting_strategy = splitting_strategy
         self.use_batch_processing = use_batch_processing
+        self.qa_system_message = qa_system_message
+        self.qa_additional_instructions = qa_additional_instructions
+        self.qa_custom_template = qa_custom_template
         
         # Initialize components
         log_message("Initializing LangChain processor components...")
@@ -82,7 +89,10 @@ class LangChainProcessor:
         # Q&A generation chain
         self.qa_chain = QAGenerationChain(
             llm_provider=self.llm_provider,
-            questions_per_chunk=questions_per_chunk
+            questions_per_chunk=questions_per_chunk,
+            system_message=self.qa_system_message,
+            extra_instructions=self.qa_additional_instructions,
+            custom_template=self.qa_custom_template
         )
         
         log_message("LangChain processor initialized successfully")

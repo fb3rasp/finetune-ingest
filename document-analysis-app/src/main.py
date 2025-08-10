@@ -42,6 +42,20 @@ def main():
     parser.add_argument('--api-key', 
                        help='API key for the provider (uses env vars if not specified)')
     
+    # Ollama-specific options (for --provider local)
+    parser.add_argument('--ollama-base-url',
+                        help='Base URL for Ollama server (e.g., http://192.168.1.10:11434)')
+    parser.add_argument('--ollama-top-k', type=int,
+                        help='Ollama top_k')
+    parser.add_argument('--ollama-top-p', type=float,
+                        help='Ollama top_p')
+    parser.add_argument('--ollama-repeat-penalty', type=float,
+                        help='Ollama repeat_penalty')
+    parser.add_argument('--ollama-num-predict', type=int,
+                        help='Ollama num_predict')
+    parser.add_argument('--ollama-stop', action='append',
+                        help='Ollama stop sequence (can be set multiple times)')
+    
     # Text Processing Parameters
     parser.add_argument('--chunk-size', type=int, default=1000,
                        help='Size of text chunks for processing')
@@ -59,6 +73,14 @@ def main():
                        help='Temperature for LLM generation')
     parser.add_argument('--max-tokens', type=int, default=2000,
                        help='Maximum tokens for LLM response')
+    
+    # Prompt customization
+    parser.add_argument('--qa-system-message',
+                       help='Optional system message to steer the Q&A generation style')
+    parser.add_argument('--qa-extra-instructions',
+                       help='Extra instructions appended to the Q&A prompt (e.g., tone, format)')
+    parser.add_argument('--qa-prompt-template-file',
+                       help='Path to a custom prompt template file (must include {text} and {num_questions})')
     
     # Processing Options
     parser.add_argument('--batch-processing', action='store_true',
@@ -100,6 +122,33 @@ def main():
     log_message("Initializing LangChain Document Analysis App...")
     log_message(f"Using provider: {args.provider} with LangChain integration")
     
+    # Build provider-specific kwargs safely
+    provider_kwargs = {}
+    if args.provider == 'local':
+        # Allow .env OLLAMA_BASE_URL as a fallback if flag not supplied
+        base_url = args.ollama_base_url or os.getenv("OLLAMA_BASE_URL")
+        if base_url:
+            provider_kwargs['base_url'] = base_url
+        if args.ollama_top_k is not None:
+            provider_kwargs['top_k'] = args.ollama_top_k
+        if args.ollama_top_p is not None:
+            provider_kwargs['top_p'] = args.ollama_top_p
+        if args.ollama_repeat_penalty is not None:
+            provider_kwargs['repeat_penalty'] = args.ollama_repeat_penalty
+        if args.ollama_num_predict is not None:
+            provider_kwargs['num_predict'] = args.ollama_num_predict
+        if args.ollama_stop:
+            provider_kwargs['stop'] = args.ollama_stop
+
+    # Load optional custom prompt template
+    custom_prompt_template_str = None
+    if args.qa_prompt_template_file:
+        p = Path(args.qa_prompt_template_file)
+        if p.exists():
+            custom_prompt_template_str = p.read_text(encoding='utf-8')
+        else:
+            log_message(f"Custom prompt template not found: {args.qa_prompt_template_file}")
+    
     # Initialize LangChain processor
     try:
         processor = LangChainProcessor(
@@ -113,7 +162,13 @@ def main():
             temperature=args.temperature,
             max_tokens=args.max_tokens,
             splitting_strategy=args.splitting_strategy,
-            use_batch_processing=args.batch_processing
+            use_batch_processing=args.batch_processing,
+            # Prompt customization
+            qa_system_message=args.qa_system_message,
+            qa_additional_instructions=args.qa_extra_instructions,
+            qa_custom_template=custom_prompt_template_str,
+            # Provider-specific kwargs (e.g., Ollama)
+            **provider_kwargs
         )
         
         log_message(f"Initialized LangChain processor with model: {processor.llm_provider.model}")
@@ -128,9 +183,11 @@ def main():
         print("   pip install langchain langchain-community langchain-openai langchain-anthropic")
         
         if args.provider == 'local':
-            print("4. For local provider, make sure Ollama is running:")
+            print("4. For local provider, make sure Ollama is running (or reachable via IP):")
             print("   ollama serve")
             print(f"   ollama pull {args.model or 'llama3'}")
+            if not (args.ollama_base_url or os.getenv('OLLAMA_BASE_URL')):
+                print("   Optional: set --ollama-base-url http://<host>:11434 for remote Ollama")
         return
     
     # Show configuration if requested

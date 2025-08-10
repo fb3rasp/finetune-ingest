@@ -118,7 +118,8 @@ class QAValidator:
         api_key: Optional[str] = None,
         temperature: float = 0.1,  # Low temperature for consistent validation
         validation_threshold: float = 8.0,
-        batch_size: int = 10
+        batch_size: int = 10,
+        **provider_kwargs
     ):
         """
         Initialize QA validator.
@@ -145,7 +146,8 @@ class QAValidator:
             model=model,
             api_key=api_key,
             temperature=temperature,
-            max_tokens=1000
+            max_tokens=1000,
+            **provider_kwargs
         )
         
         # Initialize validation chain

@@ -122,13 +122,20 @@ class UnifiedLLMProvider:
             elif self.provider == LLMProvider.LOCAL:
                 if ChatOllama is None:
                     raise ImportError("langchain-ollama not installed. Run: pip install langchain-ollama")
-                # For Ollama, we need to handle the base_url if provided
-                base_url = self.kwargs.get('base_url', 'http://localhost:11434')
+                # For Ollama, handle the base_url if provided (supports remote IP)
+                base_url = self.kwargs.get('base_url', os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434'))
+                # Only pass Ollama-relevant kwargs through
+                allowed = {
+                    'top_k', 'top_p', 'repeat_penalty', 'num_predict',
+                    'stop', 'mirostat', 'mirostat_eta', 'mirostat_tau',
+                    'presence_penalty', 'frequency_penalty', 'keep_alive'
+                }
+                ollama_kwargs = {k: v for k, v in self.kwargs.items() if k in allowed}
                 return ChatOllama(
                     model=self.model,
                     temperature=self.temperature,
                     base_url=base_url,
-                    **{k: v for k, v in self.kwargs.items() if k != 'base_url'}
+                    **ollama_kwargs
                 )
             
             else:

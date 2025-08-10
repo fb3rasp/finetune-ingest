@@ -175,6 +175,22 @@ process_documents() {
         "--temperature" "$TEMPERATURE"
     )
     
+    # Provider-specific args for Ollama
+    if [[ "$PROVIDER" == "local" && -n "$OLLAMA_BASE_URL" ]]; then
+        cmd_args+=("--ollama-base-url" "$OLLAMA_BASE_URL")
+    fi
+
+    # Prompt customization args
+    if [[ -n "$QA_SYSTEM_MESSAGE" ]]; then
+        cmd_args+=("--qa-system-message" "$QA_SYSTEM_MESSAGE")
+    fi
+    if [[ -n "$QA_EXTRA_INSTRUCTIONS" ]]; then
+        cmd_args+=("--qa-extra-instructions" "$QA_EXTRA_INSTRUCTIONS")
+    fi
+    if [[ -n "$QA_PROMPT_TEMPLATE_FILE" ]]; then
+        cmd_args+=("--qa-prompt-template-file" "$QA_PROMPT_TEMPLATE_FILE")
+    fi
+
     if [[ "$BATCH_PROCESSING" == "true" ]]; then
         cmd_args+=("--batch-processing")
     fi
@@ -226,6 +242,11 @@ validate_training_data() {
         "--filter-threshold" "$FILTER_THRESHOLD"
         "--temperature" "0.1"  # Lower temperature for consistent validation
     )
+
+    # Provider-specific args for Ollama validator
+    if [[ "$PROVIDER" == "local" && -n "$OLLAMA_BASE_URL" ]]; then
+        val_cmd_args+=("--ollama-base-url" "$OLLAMA_BASE_URL")
+    fi
     
     if [[ "$QUIET_MODE" == "true" ]]; then
         val_cmd_args+=("--quiet")
