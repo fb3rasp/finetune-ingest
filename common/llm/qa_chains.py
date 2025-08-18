@@ -1,10 +1,12 @@
 import json
+import os
+from datetime import datetime
 from typing import Dict, List, Optional, Any, Callable
 try:
     from langchain.chains import LLMChain
     from langchain.prompts import PromptTemplate, ChatPromptTemplate
     from langchain.output_parsers import PydanticOutputParser, OutputFixingParser
-    from langchain.schema import BaseOutputParser
+    from langchain.schema import BaseOutputParser, BaseLLMOutputParser
 except ImportError:
     class LLMChain: ...  # type: ignore
     class PromptTemplate: ...  # type: ignore
@@ -12,10 +14,52 @@ except ImportError:
     class PydanticOutputParser: ...  # type: ignore
     class OutputFixingParser: ...  # type: ignore
     class BaseOutputParser: ...  # type: ignore
+    class BaseLLMOutputParser: ...  # type: ignore
 from pydantic import BaseModel, Field
 
 from common.llm.llm_providers import UnifiedLLMProvider
 from common.utils.helpers import log_message
+
+
+def log_failed_response(error_type: str, prompt: str, response: str, model: str, chunk_info: Dict = None):
+    """Log detailed information about failed Q&A generation responses."""
+    try:
+        # Create logs directory if it doesn't exist
+        log_dir = "data/logs"
+        os.makedirs(log_dir, exist_ok=True)
+        
+        # Create log filename with timestamp
+        timestamp = datetime.now().strftime("%Y%m%d")
+        log_file = os.path.join(log_dir, f"qa_failures_{timestamp}.log")
+        
+        # Prepare log entry
+        log_entry = {
+            "timestamp": datetime.now().isoformat(),
+            "error_type": error_type,
+            "model": model,
+            "chunk_info": chunk_info or {},
+            "prompt": prompt,
+            "response": response,
+            "response_length": len(response),
+            "separator": "=" * 80
+        }
+        
+        # Write to log file
+        with open(log_file, "a", encoding="utf-8") as f:
+            f.write(f"\n{log_entry['separator']}\n")
+            f.write(f"TIMESTAMP: {log_entry['timestamp']}\n")
+            f.write(f"ERROR TYPE: {log_entry['error_type']}\n")
+            f.write(f"MODEL: {log_entry['model']}\n")
+            f.write(f"CHUNK INFO: {json.dumps(log_entry['chunk_info'], indent=2)}\n")
+            f.write(f"RESPONSE LENGTH: {log_entry['response_length']} characters\n")
+            f.write(f"\nPROMPT SENT:\n{log_entry['prompt']}\n")
+            f.write(f"\nMODEL RESPONSE:\n{log_entry['response']}\n")
+            f.write(f"{log_entry['separator']}\n")
+        
+        log_message(f"Failed response logged to: {log_file}")
+        
+    except Exception as e:
+        log_message(f"Failed to log failed response: {e}")
 
 
 class QAPair(BaseModel):
@@ -27,8 +71,38 @@ class QAResponse(BaseModel):
     qa_pairs: List[QAPair] = Field(description="List of question-answer pairs")
 
 
-class JSONOutputParser(BaseOutputParser):
-    def parse(self, text) -> List[Dict[str, str]]:
+class JSONOutputParser(BaseLLMOutputParser):
+    """Custom JSON output parser with enhanced error logging."""
+    
+    def __init__(self):
+        super().__init__()
+        # Store context in a global dict to avoid Pydantic validation issues
+        if not hasattr(JSONOutputParser, '_context_store'):
+            JSONOutputParser._context_store = {}
+    
+    def set_context(self, prompt: str, model: str, chunk_info: Dict = None):
+        """Set context information for logging failed responses."""
+        parser_id = id(self)
+        JSONOutputParser._context_store[parser_id] = {
+            'prompt': prompt,
+            'model': model,
+            'chunk_info': chunk_info or {}
+        }
+    
+    def _get_context(self):
+        """Get context information for this parser instance."""
+        parser_id = id(self)
+        return JSONOutputParser._context_store.get(parser_id, {
+            'prompt': 'Unknown prompt',
+            'model': 'Unknown model',
+            'chunk_info': {}
+        })
+    
+    def parse_result(self, result) -> List[Dict[str, str]]:
+        """Required method for BaseLLMOutputParser."""
+        return self.parse(result[0].text if hasattr(result[0], 'text') else str(result[0]))
+    
+    def parse(self, text: str) -> List[Dict[str, str]]:
         try:
             if isinstance(text, list):
                 validated_pairs = []
@@ -41,6 +115,7 @@ class JSONOutputParser(BaseOutputParser):
             end_idx = text.rfind(']') + 1
             if start_idx == -1 or end_idx == 0:
                 raise ValueError("No JSON array found in response")
+            
             qa_pairs = json.loads(text[start_idx:end_idx])
             validated_pairs = []
             for qa in qa_pairs:
@@ -48,7 +123,20 @@ class JSONOutputParser(BaseOutputParser):
                     validated_pairs.append({'question': str(qa['question']).strip(), 'answer': str(qa['answer']).strip()})
             return validated_pairs
         except Exception as e:
-            log_message(f"JSON parsing failed: {str(e)}")
+            error_msg = str(e)
+            log_message(f"JSON parsing failed: {error_msg}")
+            
+            # Get context for logging
+            context = self._get_context()
+            
+            # Log detailed failure information
+            log_failed_response(
+                error_type=error_msg,
+                prompt=context['prompt'],
+                response=str(text),
+                model=context['model'],
+                chunk_info=context['chunk_info']
+            )
             return []
 
 
@@ -100,7 +188,8 @@ Additional instructions:
 Text to analyze:
 {text}
 
-IMPORTANT: Respond with ONLY a valid JSON array of objects with keys \"question\" and \"answer\"."""
+CRITICAL: Your response must be ONLY a valid JSON array. Do not include any thinking, explanation, or extra text. Do not use <think> tags. Start directly with [ and end with ]. Example format:
+[{{"question": "What is...", "answer": "The answer is..."}}, {{"question": "How does...", "answer": "It works by..."}}]"""
         )
         self.human_template_str = template
         if self.system_message:
@@ -109,6 +198,31 @@ IMPORTANT: Respond with ONLY a valid JSON array of objects with keys \"question\
 
     def generate_qa_pairs(self, chunk: Dict, metadata: Dict) -> List[Dict]:
         input_data = {"text": chunk['text'], "num_questions": self.questions_per_chunk}
+        
+        # Generate the full prompt for logging
+        if hasattr(self.prompt_template, 'format'):
+            formatted_prompt = self.prompt_template.format(**input_data)
+        else:
+            # For ChatPromptTemplate, format differently
+            formatted_prompt = self.human_template_str.format(**input_data)
+        
+        # Set context for the parser in case of failure
+        chunk_info = {
+            'chunk_id': chunk.get('chunk_id'),
+            'chunk_index': chunk.get('chunk_index'),
+            'file_name': metadata.get('file_name'),
+            'chunk_length': len(chunk['text']),
+            'chunk_start': chunk.get('start_char'),
+            'chunk_end': chunk.get('end_char')
+        }
+        
+        if hasattr(self.output_parser, 'set_context'):
+            self.output_parser.set_context(
+                prompt=formatted_prompt,
+                model=self.llm_provider.model,
+                chunk_info=chunk_info
+            )
+        
         raw_response = self.qa_chain.run(input_data)
         qa_pairs = self.output_parser.parse(raw_response) if not self.use_structured_output else []
         enhanced: List[Dict] = []
@@ -135,7 +249,24 @@ IMPORTANT: Respond with ONLY a valid JSON array of objects with keys \"question\
             for c in batch:
                 prompts.append(self.human_template_str.format(text=c['text'], num_questions=self.questions_per_chunk, extra_instructions=self.extra_instructions))
             responses = self.llm_provider.batch_generate(prompts, system_message=self.system_message)
-            for c, resp in zip(batch, responses):
+            for c, resp, prompt in zip(batch, responses, prompts):
+                # Set context for parser in case of failure
+                chunk_info = {
+                    'chunk_id': c.get('chunk_id'),
+                    'chunk_index': c.get('chunk_index'),
+                    'file_name': metadata.get('file_name'),
+                    'chunk_length': len(c['text']),
+                    'chunk_start': c.get('start_char'),
+                    'chunk_end': c.get('end_char')
+                }
+                
+                if hasattr(self.output_parser, 'set_context'):
+                    self.output_parser.set_context(
+                        prompt=prompt,
+                        model=self.llm_provider.model,
+                        chunk_info=chunk_info
+                    )
+                
                 qa_pairs = self.output_parser.parse(resp) if not self.use_structured_output else []
                 enhanced_for_chunk = []
                 for qa in qa_pairs:
