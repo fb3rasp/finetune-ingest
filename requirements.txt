@@ -38,6 +38,7 @@ ollama
 pydantic
 python-dotenv
 requests
+pypdf
 
 # ==========================================
 # Configuration Management
