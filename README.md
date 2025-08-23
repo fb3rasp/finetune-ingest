@@ -1,6 +1,6 @@
 # Finetune Ingest
 
-A comprehensive system for generating and validating high-quality training data for LLM fine-tuning.
+A comprehensive system for generating high-quality training data and fine-tuning large language models end-to-end.
 
 ## 🏗️ **Project Structure**
 
@@ -10,29 +10,79 @@ finetune-ingest/
 │   ├── src/
 │   │   └── chunk_documents.py  # Document chunking script
 │   └── README.md
-├── training_data_generator/    # Q&A generation and combining
+├── training_data_generator/    # Q&A generation and data conversion
 │   ├── src/
 │   │   ├── generate_qa.py      # Q&A generation script (resumable)
-│   │   └── combine_qa_results.py # Combine individual Q&A files
+│   │   ├── combine_qa_results.py # Combine individual Q&A files
+│   │   └── convert_qa_to_training.py # Convert Q&A to training format
 │   └── README.md
 ├── fact_checker/               # Q&A validation and quality assurance
 │   ├── src/
 │   │   └── validate_qa.py      # Validation script
 │   └── README.md
+├── finetune-model/             # 🆕 Complete fine-tuning framework
+│   ├── src/                    # Modular training components
+│   │   ├── config/             # Configuration management
+│   │   ├── models/             # Model loading and LoRA setup
+│   │   ├── training/           # Training pipeline and callbacks
+│   │   └── utils/              # Logging and validation utilities
+│   ├── finetune.py             # Main fine-tuning script
+│   ├── config.yaml             # Training configuration
+│   └── README_ENHANCED.md      # Detailed fine-tuning documentation
 ├── common/                     # Shared libraries and utilities
 │   ├── document_processing/    # Document processing modules
 │   │   ├── document_loaders.py # LangChain document loaders
 │   │   └── text_splitters.py   # Enhanced text splitting
 │   ├── llm/                    # LLM interface and chains
 │   │   ├── llm_providers.py    # Unified LLM interface
-│   │   └── qa_chains.py        # Q&A generation chains
+│   │   └── qa_chains.py        # Q&A generation chains (enhanced)
 │   └── utils/
 │       └── helpers.py          # Common helper functions
 ├── config.env                  # Centralized configuration
 └── run_split_workflow.sh       # Main workflow automation script
 ```
 
-## 🚀 **Quick Start**
+## 🚀 **Complete ML Pipeline**
+
+### **Phase 1: Data Generation**
+
+```bash
+# 1. Document Processing
+./run_split_workflow.sh --step 1
+
+# 2. Q&A Generation (resumable)
+./run_split_workflow.sh --step 2 --resume
+
+# 3. Combine Results
+./run_split_workflow.sh --step 3
+
+# 4. Convert to Training Format
+python3 training_data_generator/src/convert_qa_to_training.py \
+  "data/document_training_data/NZISM-ISM Document-V.-3.9-April-2025_qa.json" \
+  --output-dir data/document_training_data
+```
+
+### **Phase 2: Model Fine-Tuning**
+
+```bash
+# Fine-tune with generated data
+cd finetune-model
+python3 finetune.py \
+  --dataset-path "../data/document_training_data/NZISM-ISM Document-V.-3.9-April-2025_trainingdata.jsonl" \
+  --output-dir "./nzism-chatbot-v1"
+```
+
+### **Phase 3: Quality Assurance (Optional)**
+
+```bash
+# Validate training data quality
+cd fact_checker
+python src/validate_qa.py \
+  --input /data/results/training_data.json \
+  --output /data/results/validation_report.json
+```
+
+## ⚡ **Quick Start**
 
 ### 1. Setup Environment
 
@@ -46,68 +96,71 @@ cp config.env .env
 # Edit .env with your API keys and settings
 ```
 
-### 2. Run Split Workflow (Recommended)
+### 2. End-to-End Workflow
 
 ```bash
-# Complete workflow: chunking → Q&A generation → combining
+# Complete pipeline: data generation → fine-tuning
 ./run_split_workflow.sh
-
-# Resume interrupted workflow
-./run_split_workflow.sh --resume
-
-# Run specific steps
-./run_split_workflow.sh --step 1  # Document chunking only
-./run_split_workflow.sh --step 2  # Q&A generation only (resumable!)
-./run_split_workflow.sh --step 3  # Combine results only
+cd finetune-model && python3 finetune.py
 ```
 
-### 3. Validate Results (Optional)
+### 3. Resume Interrupted Processing
 
 ```bash
-cd fact_checker
-python src/validate_qa.py \
-  --input /data/results/training_data.json \
-  --output /data/results/validation_report.json
+# Resume Q&A generation from interruption
+./run_split_workflow.sh --step 2 --resume
+
+# Convert existing Q&A to training format
+python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
 ```
 
 ## 📊 **Data Flow**
 
-### Split Workflow (Recommended)
+### Complete Pipeline
 
 ```
 📁 /data/incoming/          # Source documents (PDF, MD, HTML, DOCX, TXT)
     ↓ document_chunker/
-📁 /data/chunks/            # document1_chunks.json, document2_chunks.json, ...
+📁 /data/chunks/            # document1_chunks.json, document2_chunks.json
     ↓ training_data_generator/ (resumable!)
-📁 /data/qa_results/        # document1_qa.json, document2_qa.json, ...
-    ↓ training_data_generator/
-📁 /data/results/           # training_data.json (final combined file)
+📁 /data/qa_results/        # document1_qa.json, document2_qa.json
+    ↓ convert_qa_to_training.py
+📁 /data/document_training_data/ # document1_trainingdata.jsonl, document2_trainingdata.jsonl
+    ↓ finetune-model/
+📁 /finetune-model/output/  # Fine-tuned LoRA adapters
     ↓ fact_checker/ (optional)
 📁 /data/results/           # validation_report.json, training_data_filtered.json
 ```
 
 ## 🛡️ **Key Features**
 
-### Resumability
+### 🆕 **End-to-End ML Pipeline**
 
-- **Chunk-level tracking**: Q&A generation saves progress after each chunk
-- **Interrupt-safe**: Ctrl+C gracefully saves current state
-- **Atomic operations**: No data corruption from interruptions
-- **Exact resume**: Continue from the exact stopping point
+- **Complete Data Pipeline**: Document processing → Q&A generation → Training data
+- **Advanced Fine-Tuning**: LoRA-based training with hardware optimization
+- **Production-Ready**: Comprehensive error handling and monitoring
+- **Format Conversion**: Automatic Q&A to Alpaca training format conversion
 
-### Reliability
+### **Enhanced Training Framework**
 
-- **Error isolation**: Failed chunks don't affect completed ones
-- **Fallback mechanisms**: Robust error handling at all levels
-- **Progress monitoring**: Real-time status tracking
-- **Validation**: Optional quality assurance step
+- **Hardware-Aware**: Automatic GPU detection and memory optimization
+- **Progressive Loading**: Fallback strategies for model loading
+- **LoRA Integration**: Efficient fine-tuning with Low-Rank Adaptation
+- **Real-Time Monitoring**: Training metrics and performance tracking
 
-### Flexibility
+### **Robust Data Generation**
 
-- **Multiple LLM providers**: OpenAI, Claude, Gemini, Local/Ollama
-- **Configurable processing**: Chunk sizes, overlap, questions per chunk
-- **Multiple document formats**: PDF, Markdown, HTML, DOCX, TXT
-- **Modular architecture**: Run components independently
+- **Resumability**: Chunk-level tracking with interrupt safety
+- **Error Isolation**: Failed chunks don't affect completed ones
+- **Multiple LLM Providers**: OpenAI, Claude, Gemini, Local/Ollama
+- **Quality Validation**: Optional fact-checking and filtering
+
+### **Developer Experience**
+
+- **Modular Architecture**: Run components independently
+- **Comprehensive Logging**: Enhanced error tracking and debugging
+- **Flexible Configuration**: YAML and environment-based settings
+- **Clear Documentation**: Detailed guides for each component
 
 ## 🔧 **Configuration**
 
@@ -120,18 +173,21 @@ GENERATOR_MODEL=qwen3:14b
 GENERATOR_TEMPERATURE=0.3
 OLLAMA_BASE_URL=http://192.168.50.133:11434
 
-# Directory Structure (Split Workflow)
+# Directory Structure
 GENERATOR_INCOMING_DIR=/data/incoming
-GENERATOR_PROCESS_DIR=/data/chunks          # Document chunks
-GENERATOR_OUTPUT_DIR=/data/qa_results       # Individual Q&A files
+GENERATOR_PROCESS_DIR=/data/chunks
+GENERATOR_OUTPUT_DIR=/data/qa_results
 GENERATOR_OUTPUT_FILE=/data/results/training_data.json
 
 # Processing Settings
 GENERATOR_CHUNK_SIZE=1000
 GENERATOR_CHUNK_OVERLAP=200
 GENERATOR_QUESTIONS_PER_CHUNK=5
-GENERATOR_RESUME=true                       # Enable resumability
-GENERATOR_BATCH_PROCESSING=false            # Recommended for resumability
+GENERATOR_RESUME=true
+GENERATOR_BATCH_PROCESSING=false
+
+# Logging Settings
+QA_LOG_DIR=/data/logs                    # Q&A generation failure logs
 
 # Validation Settings
 VALIDATOR_PROVIDER=local
@@ -144,107 +200,107 @@ VALIDATOR_THRESHOLD=8.0
 - **[Document Chunker](document_chunker/README.md)**: Document processing and chunking
 - **[Training Data Generator](training_data_generator/README.md)**: Q&A generation and combining
 - **[Fact Checker](fact_checker/README.md)**: Quality validation and filtering
+- **[Fine-Tuning Framework](finetune-model/README_ENHANCED.md)**: Complete model training pipeline
 
 ## 🎯 **Use Cases**
 
-### Development & Testing
+### **Rapid Prototyping**
 
 ```bash
-# Process a few documents quickly
+# Process small document set and train quickly
 ./run_split_workflow.sh --step 1
 ./run_split_workflow.sh --step 2
+python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
+cd finetune-model && python3 finetune.py
 ```
 
-### Production Processing
+### **Production Training**
 
 ```bash
-# Full workflow with validation
+# Full pipeline with validation
 ./run_split_workflow.sh
-cd fact_checker && python src/validate_qa.py --input /data/results/training_data.json
+python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
+cd finetune-model && python3 finetune.py --config config-production.yaml
+cd ../fact_checker && python src/validate_qa.py --input /data/results/training_data.json
 ```
 
-### Large Document Sets
+### **Large Document Collections**
 
 ```bash
-# Process in phases, resume as needed
-./run_split_workflow.sh --step 1           # Chunk all documents first
+# Process in phases with resumability
+./run_split_workflow.sh --step 1           # Chunk all documents
 ./run_split_workflow.sh --step 2 --resume  # Generate Q&A (resumable)
-./run_split_workflow.sh --step 3           # Combine when ready
+./run_split_workflow.sh --step 3           # Combine results
+
+# Convert and train on specific documents
+python3 training_data_generator/src/convert_qa_to_training.py \
+  "data/qa_results/ImportantDoc_qa.json" \
+  --output-dir data/training/priority/
 ```
 
-### Interruption Recovery
+### **Multi-Document Training**
 
 ```bash
-# If Q&A generation is interrupted, simply resume:
-./run_split_workflow.sh --step 2 --resume
+# Convert multiple Q&A files to training format
+python3 training_data_generator/src/convert_qa_to_training.py data/qa_results \
+  --output-dir data/combined_training/
+
+# Train on combined dataset
+cd finetune-model
+python3 finetune.py --dataset-path "../data/combined_training/*.jsonl"
 ```
 
 ## 🔍 **Monitoring Progress**
 
-- **Chunking**: Check `/data/chunks/chunking_summary.json`
-- **Q&A Generation**: Check `/data/qa_results/qa_generation_summary.json`
-- **Individual Files**: Each `*_qa.json` file shows completion status
-- **Final Results**: Check `/data/results/training_data.json` for summary
+- **Data Generation**: Check `/data/qa_results/qa_generation_summary.json`
+- **Training Progress**: Monitor `/finetune-model/*/logs/latest.log`
+- **Individual Files**: Each `*_qa.json` shows completion status
+- **Model Checkpoints**: Saved in `/finetune-model/output-dir/`
+- **Error Logs**: Check `/data/logs/qa_failures_*.log`
 
 ## 🚨 **Troubleshooting**
 
-### Common Issues
+### **Common Issues**
 
 1. **Import Errors**: Ensure conda environment is activated
 2. **Permission Errors**: Scripts auto-fallback to local `./data/` directories
-3. **Interrupted Q&A**: Use `--resume` flag to continue from stopping point
-4. **Missing Dependencies**: Check `requirements.txt` in each module
+3. **Memory Issues**: Fine-tuning automatically optimizes for available hardware
+4. **Training Failures**: Check dataset path in config and format validation
 
-### Error Recovery
+### **Error Recovery**
 
-- **Failed chunks**: Tracked in `failed_chunks` array, don't stop processing
-- **Incomplete files**: Status field shows `in_progress`, `interrupted`, `failed`
-- **Resume from interruption**: Progress saved after each chunk completion
+- **Failed Q&A Generation**: Use `--resume` flag to continue
+- **Training Interruption**: Resume from latest checkpoint automatically
+- **Data Format Issues**: Use conversion script to fix format
+- **Hardware Limitations**: Framework automatically adjusts to available resources
 
-## 🔄 **Migration from Legacy**
+## 🆕 **Recent Enhancements**
 
-If you were using the original `data_generator/src/main.py`:
+### **v2.0 Features**
 
-### Old Command
+- ✅ **Complete Fine-Tuning Pipeline**: End-to-end training framework
+- ✅ **Enhanced Error Handling**: Improved LangChain compatibility and logging
+- ✅ **Format Conversion**: Automatic Q&A to training data conversion
+- ✅ **Hardware Optimization**: Automatic GPU detection and memory management
+- ✅ **Modular Architecture**: Clear separation of concerns
+- ✅ **Production Ready**: Comprehensive monitoring and error recovery
 
-```bash
-cd data_generator
-python src/main.py --provider local --model qwen3:14b --resume
-```
+### **Performance Improvements**
 
-### New Command
+- 🚀 **Faster Processing**: Optimized chunk processing and resume capabilities
+- 🚀 **Better Resource Usage**: Hardware-aware training optimization
+- 🚀 **Reduced Memory Footprint**: Efficient model loading strategies
+- 🚀 **Improved Reliability**: Enhanced error isolation and recovery
 
-```bash
-# From project root
-./run_split_workflow.sh --resume
-```
+## 🎉 **Complete ML Workflow**
 
-The new split workflow provides the same functionality with improved resumability and better error handling.
+This project now provides a **complete machine learning pipeline**:
 
-## 🧹 **Refactored Architecture**
+1. **📄 Document Processing**: Multi-format document ingestion and chunking
+2. **🤖 Q&A Generation**: AI-powered training data creation with resumability
+3. **🔄 Format Conversion**: Automatic transformation to training formats
+4. **🎯 Model Fine-Tuning**: LoRA-based training with hardware optimization
+5. **✅ Quality Assurance**: Optional validation and filtering
+6. **📊 Monitoring**: Comprehensive logging and progress tracking
 
-The project has been completely refactored for better maintainability:
-
-### What Changed
-
-- **Removed Legacy Code**: Eliminated 400+ lines of unused code from `data_generator/`
-- **Shared Modules**: All common functionality moved to `common/` folder
-- **Logical Organization**: Document processing vs. LLM functionality clearly separated
-- **Cleaner Imports**: No complex path manipulation needed
-- **Single Source of Truth**: Each module has one authoritative location
-
-### New Structure
-
-- `common/document_processing/` - Document loading and text splitting
-- `common/llm/` - LLM providers and Q&A generation chains
-- `common/utils/` - Shared helper functions
-
-## 🎉 **Benefits of Split Architecture**
-
-1. **Never lose progress**: Chunk-level resumability
-2. **Better debugging**: Isolate issues to specific components
-3. **Resource management**: Process large datasets in phases
-4. **Selective re-processing**: Re-run only failed or updated parts
-5. **Parallel development**: Work on different components independently
-6. **Clear separation**: Document processing vs. Q&A generation vs. validation
-7. **Maintainable codebase**: No duplicated or legacy code
+Perfect for creating **domain-specific chatbots** and **specialized AI assistants** from your documents!
