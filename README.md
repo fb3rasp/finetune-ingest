@@ -2,9 +2,9 @@
 
 A comprehensive system for generating high-quality training data and fine-tuning large language models end-to-end.
 
-## 🏗️ **Project Structure**
+## Project Structure
 
-```
+```bash
 finetune-ingest/
 ├── document_chunker/           # Document processing and chunking
 │   ├── src/
@@ -114,11 +114,11 @@ cd finetune-model && python3 finetune.py
 python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
 ```
 
-## 📊 **Data Flow**
+## Data Flow
 
 ### Complete Pipeline
 
-```
+```bash
 📁 /data/incoming/          # Source documents (PDF, MD, HTML, DOCX, TXT)
     ↓ document_chunker/
 📁 /data/chunks/            # document1_chunks.json, document2_chunks.json
@@ -132,9 +132,9 @@ python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
 📁 /data/results/           # validation_report.json, training_data_filtered.json
 ```
 
-## 🛡️ **Key Features**
+## Key Features
 
-### 🆕 **End-to-End ML Pipeline**
+### End-to-End ML Pipeline
 
 - **Complete Data Pipeline**: Document processing → Q&A generation → Training data
 - **Advanced Fine-Tuning**: LoRA-based training with hardware optimization
