@@ -1,0 +1,73 @@
+# Finetune-Ingest Project - Centralized Requirements
+# Complete ML pipeline for training data generation and model fine-tuning
+
+# ==========================================
+# Core ML Framework (Fine-tuning)
+# ==========================================
+torch
+torchvision  
+torchaudio
+transformers
+peft
+accelerate
+datasets
+trl
+bitsandbytes
+
+# ==========================================
+# LangChain Ecosystem (Data Generation & Q&A)
+# ==========================================
+langchain
+langchain-openai
+langchain-anthropic
+langchain-google-genai
+langchain-ollama
+langchain-community
+
+# ==========================================
+# LLM Providers
+# ==========================================
+openai
+anthropic
+google-generativeai
+ollama
+
+# ==========================================
+# Data Processing & Document Handling
+# ==========================================
+pydantic
+python-dotenv
+requests
+
+# ==========================================
+# Configuration Management
+# ==========================================
+pyyaml
+typing-extensions
+
+# ==========================================
+# Document Processing (Optional)
+# ==========================================
+# Uncomment these if you plan to process specific document types:
+# pypdf2                    # PDF processing
+# unstructured             # Document parsing
+# python-docx              # Word documents
+# beautifulsoup4           # HTML parsing
+# markdown                 # Markdown processing
+
+# ==========================================
+# Monitoring & Development (Optional)
+# ==========================================
+# Uncomment these for enhanced monitoring and development:
+# nvidia-ml-py             # GPU monitoring
+# psutil                   # System monitoring
+# wandb                    # Experiment tracking
+# tensorboard              # Metrics visualization
+
+# ==========================================
+# Development Tools (Optional)
+# ==========================================
+# black                    # Code formatting
+# flake8                   # Linting
+# pytest                   # Testing
+# mypy                     # Type checking
