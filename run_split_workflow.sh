@@ -13,10 +13,10 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 # Default directories (can be overridden with environment variables)
-INCOMING_DIR=${GENERATOR_INCOMING_DIR:-"/data/incoming"}
-CHUNKS_DIR=${GENERATOR_PROCESS_DIR:-"/data/chunks"}
-QA_DIR=${GENERATOR_OUTPUT_DIR:-"/data/qa_results"}
-OUTPUT_FILE=${GENERATOR_OUTPUT_FILE:-"/data/results/training_data.json"}
+INCOMING_DIR=${GENERATOR_INCOMING_DIR:-"../data/documents"}
+CHUNKS_DIR=${GENERATOR_PROCESS_DIR:-"../data/document_chunks"}
+QA_DIR=${GENERATOR_OUTPUT_DIR:-"../data/document_training_data"}
+OUTPUT_FILE=${GENERATOR_OUTPUT_FILE:-"../data/document_training_data/training_data.json"}
 
 # Parse command line arguments
 RESUME=""

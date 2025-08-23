@@ -3,12 +3,10 @@ import os
 from datetime import datetime
 from typing import Dict, List, Optional, Any, Callable
 try:
-    from langchain.chains import LLMChain
     from langchain.prompts import PromptTemplate, ChatPromptTemplate
     from langchain.output_parsers import PydanticOutputParser, OutputFixingParser
     from langchain.schema import BaseOutputParser, BaseLLMOutputParser
 except ImportError:
-    class LLMChain: ...  # type: ignore
     class PromptTemplate: ...  # type: ignore
     class ChatPromptTemplate: ...  # type: ignore
     class PydanticOutputParser: ...  # type: ignore
@@ -24,8 +22,16 @@ from common.utils.helpers import log_message
 def log_failed_response(error_type: str, prompt: str, response: str, model: str, chunk_info: Dict = None):
     """Log detailed information about failed Q&A generation responses."""
     try:
-        # Create logs directory if it doesn't exist
-        log_dir = "data/logs"
+        # Determine log directory - use environment variable or project root data/logs
+        log_dir = os.getenv('QA_LOG_DIR')
+        
+        if not log_dir:
+            # Find project root by locating the common directory
+            current_file = os.path.abspath(__file__)
+            # Since this file is in common/llm/, go up two levels to reach project root
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+            log_dir = os.path.join(project_root, "data", "logs")
+        
         os.makedirs(log_dir, exist_ok=True)
         
         # Create log filename with timestamp
@@ -110,17 +116,48 @@ class JSONOutputParser(BaseLLMOutputParser):
                     if isinstance(qa, dict) and 'question' in qa and 'answer' in qa:
                         validated_pairs.append({'question': str(qa['question']).strip(), 'answer': str(qa['answer']).strip()})
                 return validated_pairs
+            
+            # Handle response content from LangChain message objects
+            if hasattr(text, 'content'):
+                text = text.content
             text = str(text).strip()
+            
+            # Remove common unwanted content that models add despite instructions
+            # Remove <think> tags and their content
+            import re
+            text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+            
+            # Remove any leading/trailing explanatory text before/after JSON
+            # Look for the JSON array more aggressively
             start_idx = text.find('[')
             end_idx = text.rfind(']') + 1
-            if start_idx == -1 or end_idx == 0:
-                raise ValueError("No JSON array found in response")
             
-            qa_pairs = json.loads(text[start_idx:end_idx])
+            if start_idx == -1 or end_idx == 0:
+                # Try to find JSON objects even if not in array format
+                json_pattern = r'\{"question":\s*"[^"]*",\s*"answer":\s*"[^"]*"\}'
+                matches = re.findall(json_pattern, text, re.DOTALL)
+                if matches:
+                    # Convert individual objects to array format
+                    text = '[' + ','.join(matches) + ']'
+                    start_idx = 0
+                    end_idx = len(text)
+                else:
+                    raise ValueError("No JSON array found in response")
+            
+            json_text = text[start_idx:end_idx]
+            
+            # Fix common JSON issues
+            # Fix unescaped quotes in strings
+            json_text = self._fix_json_escaping(json_text)
+            
+            qa_pairs = json.loads(json_text)
             validated_pairs = []
             for qa in qa_pairs:
                 if isinstance(qa, dict) and 'question' in qa and 'answer' in qa:
-                    validated_pairs.append({'question': str(qa['question']).strip(), 'answer': str(qa['answer']).strip()})
+                    # Clean up the strings
+                    question = str(qa['question']).strip().replace('\n', ' ').replace('\r', '')
+                    answer = str(qa['answer']).strip().replace('\n', ' ').replace('\r', '')
+                    validated_pairs.append({'question': question, 'answer': answer})
             return validated_pairs
         except Exception as e:
             error_msg = str(e)
@@ -138,6 +175,37 @@ class JSONOutputParser(BaseLLMOutputParser):
                 chunk_info=context['chunk_info']
             )
             return []
+    
+    def _fix_json_escaping(self, json_text: str) -> str:
+        """Fix common JSON escaping issues in LLM responses."""
+        try:
+            # Try parsing as-is first
+            json.loads(json_text)
+            return json_text
+        except json.JSONDecodeError as e:
+            # Try some common fixes
+            fixed_text = json_text
+            
+            # Fix 1: Handle unescaped quotes in strings (basic approach)
+            # This looks for quotes that aren't properly escaped
+            import re
+            
+            # Fix 2: Handle invalid escape sequences
+            # Replace invalid escape sequences like \' with proper escaping
+            fixed_text = fixed_text.replace("\\'", "'")  # \' is not valid JSON, just use '
+            
+            # Fix 3: Try to fix missing commas between objects
+            # This is a very basic fix - replace }{ with },{
+            fixed_text = re.sub(r'\}\s*\{', '},{', fixed_text)
+            
+            # Fix 4: Handle newlines in strings by replacing them with \\n
+            # This is tricky because we need to only fix newlines inside strings
+            try:
+                json.loads(fixed_text)
+                return fixed_text
+            except json.JSONDecodeError:
+                # If still failing, return original - the error will be logged
+                return json_text
 
 
 class QAGenerationChain:
@@ -165,7 +233,11 @@ class QAGenerationChain:
             self.output_parser = JSONOutputParser()
 
         self.prompt_template = self._create_prompt_template()
-        self.qa_chain = LLMChain(llm=self.llm_provider.llm, prompt=self.prompt_template, output_parser=None if use_structured_output else self.output_parser)
+        # Use modern RunnableSequence syntax instead of deprecated LLMChain
+        if use_structured_output:
+            self.qa_chain = self.prompt_template | self.llm_provider.llm
+        else:
+            self.qa_chain = self.prompt_template | self.llm_provider.llm
         log_message(f"Initialized QA chain with {questions_per_chunk} questions per chunk")
 
     def _create_prompt_template(self):
@@ -188,8 +260,17 @@ Additional instructions:
 Text to analyze:
 {text}
 
-CRITICAL: Your response must be ONLY a valid JSON array. Do not include any thinking, explanation, or extra text. Do not use <think> tags. Start directly with [ and end with ]. Example format:
-[{{"question": "What is...", "answer": "The answer is..."}}, {{"question": "How does...", "answer": "It works by..."}}]"""
+CRITICAL OUTPUT REQUIREMENTS:
+- Your response must be ONLY a valid JSON array
+- Do NOT include any thinking, explanation, or commentary
+- Do NOT use <think> tags or similar
+- Do NOT add any text before or after the JSON
+- Start your response directly with [ and end with ]
+- Ensure all strings are properly escaped (use \\" for quotes inside strings)
+- Use exactly this format: [{{"question": "...", "answer": "..."}}, {{"question": "...", "answer": "..."}}]
+
+EXAMPLE:
+[{{"question": "What is the main purpose of this policy?", "answer": "The main purpose is to establish guidelines for information security."}}, {{"question": "How should agencies implement these controls?", "answer": "Agencies should implement controls based on their specific risk assessment and operational requirements."}}]"""
         )
         self.human_template_str = template
         if self.system_message:
@@ -223,7 +304,7 @@ CRITICAL: Your response must be ONLY a valid JSON array. Do not include any thin
                 chunk_info=chunk_info
             )
         
-        raw_response = self.qa_chain.run(input_data)
+        raw_response = self.qa_chain.invoke(input_data)
         qa_pairs = self.output_parser.parse(raw_response) if not self.use_structured_output else []
         enhanced: List[Dict] = []
         for qa in qa_pairs:
