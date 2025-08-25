@@ -1,3 +1,5 @@
+![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)
+
 # Simplified Training Data Pipeline
 
 This document describes the new, unified approach to generating training data from documents.
