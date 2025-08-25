@@ -120,6 +120,7 @@ def validate_qa(
     model: Optional[str] = typer.Option(None, "--model", help="Model name for validation. Overrides .env setting."),
     threshold: float = typer.Option(None, "--threshold", help="Pass/fail threshold. Overrides .env setting."),
     filter_threshold: float = typer.Option(None, "--filter-threshold", help="Filtering threshold. Overrides .env setting."),
+    resume: bool = typer.Option(None, "--resume", help="Resume from existing progress. Overrides .env setting."),
     verbose: bool = typer.Option(None, "--verbose", "-v", help="Enable verbose output. Overrides .env setting.")
 ):
     """
@@ -139,8 +140,10 @@ def validate_qa(
     if filter_threshold is not None: config.filter_threshold = filter_threshold
     if verbose is not None: config.verbose = verbose
     
+    resume_val = resume if resume is not None else False
+    
     step = ValidateStep(config)
-    success = step.run()
+    success = step.run(resume=resume_val)
     
     if success:
         typer.echo("✅ Q&A validation completed successfully!")
@@ -218,6 +221,7 @@ def run_full_pipeline(
     validate_qa(
         provider=provider,
         threshold=validation_threshold,
+        resume=resume,
         verbose=verbose
     )
     

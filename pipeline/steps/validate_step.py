@@ -36,7 +36,7 @@ class ValidateStep(BaseStep):
             return False
         return True
     
-    def run(self) -> bool:
+    def run(self, resume: bool = False) -> bool:
         """Run the Q&A validation step."""
         self.log("Starting Q&A validation step...")
         
@@ -49,7 +49,8 @@ class ValidateStep(BaseStep):
                 training_data_path=self.config.training_data_file,
                 output_path=self.config.validation_report_file,
                 filtered_output_path=self.config.filtered_training_data_file,
-                filter_threshold=self.config.filter_threshold
+                filter_threshold=self.config.filter_threshold,
+                resume=resume
             )
             
             # Summary

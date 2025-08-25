@@ -1,7 +1,8 @@
 .env
 __pycache__
-incoming/
-processing/
-.pytest_cache/
+_incoming/
+_data/
 data/
+.pytest_cache/
 .claude/
+.DS_Store

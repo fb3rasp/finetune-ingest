@@ -278,7 +278,7 @@ EXAMPLE:
         return PromptTemplate(template=template, input_variables=["text", "num_questions"], partial_variables={"extra_instructions": self.extra_instructions})
 
     def generate_qa_pairs(self, chunk: Dict, metadata: Dict) -> List[Dict]:
-        input_data = {"text": chunk['text'], "num_questions": self.questions_per_chunk}
+        input_data = {"text": chunk['content'], "num_questions": self.questions_per_chunk}
         
         # Generate the full prompt for logging
         if hasattr(self.prompt_template, 'format'):
@@ -292,7 +292,7 @@ EXAMPLE:
             'chunk_id': chunk.get('chunk_id'),
             'chunk_index': chunk.get('chunk_index'),
             'file_name': metadata.get('file_name'),
-            'chunk_length': len(chunk['text']),
+            'chunk_length': len(chunk['content']),
             'chunk_start': chunk.get('start_char'),
             'chunk_end': chunk.get('end_char')
         }
@@ -305,6 +305,10 @@ EXAMPLE:
             )
         
         raw_response = self.qa_chain.invoke(input_data)
+        
+        # Log the prompt and response to file
+        self._log_prompt_response(chunk, formatted_prompt, raw_response, metadata)
+        
         qa_pairs = self.output_parser.parse(raw_response) if not self.use_structured_output else []
         enhanced: List[Dict] = []
         for qa in qa_pairs:
@@ -318,9 +322,54 @@ EXAMPLE:
                 'chunk_index': chunk.get('chunk_index'),
                 'chunk_start': chunk.get('start_char'),
                 'chunk_end': chunk.get('end_char'),
-                'source_text': chunk['text'],
+                'source_text': chunk['content'],
             })
         return enhanced
+
+    def _log_prompt_response(self, chunk: Dict, prompt: str, response: str, metadata: Dict):
+        """Log the prompt and response to a file for debugging."""
+        try:
+            from datetime import datetime
+            import os
+            from pathlib import Path
+            
+            # Create logs directory if it doesn't exist
+            logs_dir = Path("_data/logs")
+            logs_dir.mkdir(parents=True, exist_ok=True)
+            
+            # Create log filename with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            chunk_id = chunk.get('chunk_id', 'unknown')
+            filename = f"qa_generation_{timestamp}_{chunk_id}.log"
+            log_file = logs_dir / filename
+            
+            # Format the log content
+            log_content = f"""CHUNK {chunk.get('chunk_index', 'unknown')}/{metadata.get('chunk_count', 'unknown')}
+=====================================
+CHUNK ID: {chunk_id}
+FILE: {metadata.get('file_name', 'unknown')}
+MODEL: {self.llm_provider.model}
+TIMESTAMP: {datetime.now().isoformat()}
+=====================================
+
+PROMPT:
+{prompt}
+
+=====================================
+
+OUTPUT:
+{response}
+
+=====================================
+"""
+            
+            # Write to log file
+            with open(log_file, 'w', encoding='utf-8') as f:
+                f.write(log_content)
+                
+        except Exception as e:
+            # Don't let logging errors break the main process
+            log_message(f"Warning: Failed to log prompt/response: {e}")
 
     def generate_batch_qa_pairs(self, chunks: List[Dict], metadata: Dict, max_concurrent: int = 5, on_chunk_done: Optional[Callable[[List[Dict]], None]] = None) -> List[Dict]:
         all_qa: List[Dict] = []
@@ -328,7 +377,7 @@ EXAMPLE:
             batch = chunks[i:i+max_concurrent]
             prompts: List[str] = []
             for c in batch:
-                prompts.append(self.human_template_str.format(text=c['text'], num_questions=self.questions_per_chunk, extra_instructions=self.extra_instructions))
+                prompts.append(self.human_template_str.format(text=c['content'], num_questions=self.questions_per_chunk, extra_instructions=self.extra_instructions))
             responses = self.llm_provider.batch_generate(prompts, system_message=self.system_message)
             for c, resp, prompt in zip(batch, responses, prompts):
                 # Set context for parser in case of failure
@@ -336,7 +385,7 @@ EXAMPLE:
                     'chunk_id': c.get('chunk_id'),
                     'chunk_index': c.get('chunk_index'),
                     'file_name': metadata.get('file_name'),
-                    'chunk_length': len(c['text']),
+                    'chunk_length': len(c['content']),
                     'chunk_start': c.get('start_char'),
                     'chunk_end': c.get('end_char')
                 }
@@ -361,7 +410,7 @@ EXAMPLE:
                         'chunk_index': c.get('chunk_index'),
                         'chunk_start': c.get('start_char'),
                         'chunk_end': c.get('end_char'),
-                        'source_text': c['text'],
+                        'source_text': c['content'],
                     })
                 all_qa.extend(enhanced_for_chunk)
                 if on_chunk_done and enhanced_for_chunk:

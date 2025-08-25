@@ -39,6 +39,19 @@ pydantic
 python-dotenv
 requests
 pypdf
+pypdfium2
+
+# Add these lines to requirements.txt (uncomment existing ones):
+unstructured             # Document parsing (needed for Unstructured loaders)
+python-docx              # Word documents  
+beautifulsoup4           # HTML parsing
+pypdf
+pypdfium2
+
+# ==========================================
+# CLI Interface
+# ==========================================
+typer
 
 # ==========================================
 # Configuration Management

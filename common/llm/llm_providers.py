@@ -115,7 +115,7 @@ class UnifiedLLMProvider:
                 allowed = {
                     'top_k', 'top_p', 'repeat_penalty', 'num_predict',
                     'stop', 'mirostat', 'mirostat_eta', 'mirostat_tau',
-                    'presence_penalty', 'frequency_penalty', 'keep_alive',
+                    'presence_penalty', 'frequency_penalty', 'keep_alive', 'reasoning'
                 }
                 ollama_kwargs = {k: v for k, v in self.kwargs.items() if k in allowed}
                 return ChatOllama(

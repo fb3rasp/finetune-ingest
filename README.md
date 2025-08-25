@@ -1,306 +1,210 @@
-# Finetune Ingest
+# Simplified Training Data Pipeline
 
-A comprehensive system for generating high-quality training data and fine-tuning large language models end-to-end.
+This document describes the new, unified approach to generating training data from documents.
 
-## Project Structure
+## Overview
 
-```bash
-finetune-ingest/
-├── document_chunker/           # Document processing and chunking
-│   ├── src/
-│   │   └── chunk_documents.py  # Document chunking script
-│   └── README.md
-├── training_data_generator/    # Q&A generation and data conversion
-│   ├── src/
-│   │   ├── generate_qa.py      # Q&A generation script (resumable)
-│   │   ├── combine_qa_results.py # Combine individual Q&A files
-│   │   └── convert_qa_to_training.py # Convert Q&A to training format
-│   └── README.md
-├── fact_checker/               # Q&A validation and quality assurance
-│   ├── src/
-│   │   └── validate_qa.py      # Validation script
-│   └── README.md
-├── finetune-model/             # 🆕 Complete fine-tuning framework
-│   ├── src/                    # Modular training components
-│   │   ├── config/             # Configuration management
-│   │   ├── models/             # Model loading and LoRA setup
-│   │   ├── training/           # Training pipeline and callbacks
-│   │   └── utils/              # Logging and validation utilities
-│   ├── finetune.py             # Main fine-tuning script
-│   ├── config.yaml             # Training configuration
-│   └── README_ENHANCED.md      # Detailed fine-tuning documentation
-├── common/                     # Shared libraries and utilities
-│   ├── document_processing/    # Document processing modules
-│   │   ├── document_loaders.py # LangChain document loaders
-│   │   └── text_splitters.py   # Enhanced text splitting
-│   ├── llm/                    # LLM interface and chains
-│   │   ├── llm_providers.py    # Unified LLM interface
-│   │   └── qa_chains.py        # Q&A generation chains (enhanced)
-│   └── utils/
-│       └── helpers.py          # Common helper functions
-├── config.env                  # Centralized configuration
-└── run_split_workflow.sh       # Main workflow automation script
-```
+The new pipeline consolidates the entire workflow into a single CLI tool (`run.py`) that orchestrates all steps while keeping them independent for reliability and resumability.
 
-## 🚀 **Complete ML Pipeline**
+## Quick Start
 
-### **Phase 1: Data Generation**
+### Install Dependencies
 
 ```bash
-# 1. Document Processing
-./run_split_workflow.sh --step 1
-
-# 2. Q&A Generation (resumable)
-./run_split_workflow.sh --step 2 --resume
-
-# 3. Combine Results
-./run_split_workflow.sh --step 3
-
-# 4. Convert to Training Format
-python3 training_data_generator/src/convert_qa_to_training.py \
-  "data/document_training_data/NZISM-ISM Document-V.-3.9-April-2025_qa.json" \
-  --output-dir data/document_training_data
+pip install -r requirements.txt
 ```
 
-### **Phase 2: Model Fine-Tuning**
+### Set Up Configuration
+
+Copy your API keys and settings to `config.env`:
 
 ```bash
-# Fine-tune with generated data
-cd finetune-model
-python3 finetune.py \
-  --dataset-path "../data/document_training_data/NZISM-ISM Document-V.-3.9-April-2025_trainingdata.jsonl" \
-  --output-dir "./nzism-chatbot-v1"
+cp config.env.example config.env
+# Edit config.env with your API keys
 ```
 
-### **Phase 3: Quality Assurance (Optional)**
+### Run Individual Steps
+
+1. **Chunk Documents**
+
+   ```bash
+   python run.py chunk --input-dir data/documents --output-dir data/document_chunks
+   ```
+
+2. **Generate Q&A Pairs**
+
+   ```bash
+   python run.py generate-qa --provider openai --questions-per-chunk 3
+   ```
+
+3. **Validate Quality**
+
+   ```bash
+   python run.py validate --threshold 8.0 --filter-threshold 7.0
+   ```
+
+4. **Format for Training**
+
+   ```bash
+   python run.py format --template alpaca
+   ```
+
+### Run Complete Pipeline
 
 ```bash
-# Validate training data quality
-cd fact_checker
-python src/validate_qa.py \
-  --input /data/results/training_data.json \
-  --output /data/results/validation_report.json
+python run.py pipeline --provider openai --questions-per-chunk 3 --validation-threshold 8.0
 ```
 
-## ⚡ **Quick Start**
+## Command Reference
 
-### 1. Setup Environment
+### `python run.py chunk`
+
+Splits documents into manageable chunks for processing.
+
+**Options:**
+
+- `--input-dir`: Directory containing source documents (default: `data/documents`)
+- `--output-dir`: Directory to save chunks (default: `data/document_chunks`)
+- `--chunk-size`: Size of each chunk (default: `1000`)
+- `--chunk-overlap`: Overlap between chunks (default: `200`)
+- `--resume`: Resume from existing progress
+- `--verbose`: Enable detailed output
+
+### `python run.py generate-qa`
+
+Creates question-answer pairs from document chunks.
+
+**Options:**
+
+- `--input-dir`: Directory containing chunks (default: `data/document_chunks`)
+- `--output-dir`: Directory to save Q&A pairs (default: `data/document_training_data`)
+- `--provider`: LLM provider (`openai`, `claude`, `gemini`, `local`)
+- `--model`: Specific model name
+- `--questions-per-chunk`: Number of Q&A pairs per chunk (default: `3`)
+- `--temperature`: LLM temperature (default: `0.7`)
+- `--resume`: Resume from existing progress
+- `--verbose`: Enable detailed output
+
+### `python run.py validate`
+
+Validates Q&A pairs for quality and accuracy.
+
+**Options:**
+
+- `--input`: Input training data file (default: `data/document_training_data/training_data.json`)
+- `--output`: Validation report file (default: `data/document_training_data/validation_report.json`)
+- `--filtered-output`: Filtered training data file (default: `data/document_training_data/training_data_filtered.json`)
+- `--provider`: LLM provider for validation
+- `--model`: Model for validation
+- `--threshold`: Pass/fail threshold (default: `8.0`)
+- `--filter-threshold`: Filtering threshold (default: `7.0`)
+- `--verbose`: Enable detailed output
+
+### `python run.py format`
+
+Formats validated Q&A pairs for model training.
+
+**Options:**
+
+- `--input`: Filtered training data file (default: `data/document_training_data/training_data_filtered.json`)
+- `--output`: Final training data file (default: `data/document_training_data/training_data_final.jsonl`)
+- `--template`: Training format template (default: `alpaca`)
+- `--verbose`: Enable detailed output
+
+### `python run.py pipeline`
+
+Runs the complete pipeline in sequence.
+
+**Options:** Combines options from all individual steps.
+
+## File Structure
+
+```
+data/
+├── documents/                    # Source documents (input)
+├── document_chunks/             # Chunked documents (intermediate)
+├── document_training_data/      # Generated training data (output)
+│   ├── training_data.json       # Raw Q&A pairs
+│   ├── validation_report.json   # Quality validation report
+│   ├── training_data_filtered.json  # High-quality Q&A pairs
+│   └── training_data_final.jsonl    # Formatted for training
+└── ...
+
+pipeline/                        # New unified pipeline code
+├── config.py                   # Configuration management
+├── steps/                      # Individual pipeline steps
+│   ├── chunk_step.py
+│   ├── generate_qa_step.py
+│   ├── validate_step.py
+│   └── format_step.py
+└── ...
+
+run.py                          # Main CLI entry point
+```
+
+## Benefits
+
+1. **Single Entry Point**: One `run.py` command for everything
+2. **Independent Steps**: Each step can be run separately for robustness
+3. **Resume Capability**: Failed steps can be resumed without starting over
+4. **Consistent Interface**: Same command structure for all operations
+5. **Simplified Project**: Fewer directories and scripts to manage
+
+## Migration from Old Structure
+
+The old directories (`document_chunker/`, `training_data_generator/`, `fact_checker/`) are deprecated but still functional. You can gradually migrate by:
+
+1. Testing the new pipeline with your existing data
+2. Comparing results to ensure quality
+3. Removing the old directories once confident
+
+## Configuration
+
+You can set default values using environment variables in `config.env`:
 
 ```bash
-# Activate conda environment
-source /Users/rainer/.zshrc
-conda activate finetune
+# Pipeline settings
+PIPELINE_INPUT_DIR=data/documents
+PIPELINE_CHUNKS_DIR=data/document_chunks
+PIPELINE_QA_DIR=data/document_training_data
 
-# Copy and configure environment
-cp config.env .env
-# Edit .env with your API keys and settings
+# LLM settings
+PIPELINE_LLM_PROVIDER=openai
+PIPELINE_LLM_MODEL=gpt-4
+PIPELINE_QUESTIONS_PER_CHUNK=3
+
+# Validation settings
+PIPELINE_VALIDATION_THRESHOLD=8.0
+PIPELINE_FILTER_THRESHOLD=7.0
 ```
 
-### 2. End-to-End Workflow
+## Examples
+
+### Basic workflow
 
 ```bash
-# Complete pipeline: data generation → fine-tuning
-./run_split_workflow.sh
-cd finetune-model && python3 finetune.py
+# Step by step
+python run.py chunk --verbose
+python run.py generate-qa --provider openai --questions-per-chunk 5
+python run.py validate --threshold 8.5 --filter-threshold 7.5
+python run.py format
+
+# Or all at once
+python run.py pipeline --provider openai --questions-per-chunk 5 --validation-threshold 8.5 --verbose
 ```
 
-### 3. Resume Interrupted Processing
+### Resume interrupted work
 
 ```bash
-# Resume Q&A generation from interruption
-./run_split_workflow.sh --step 2 --resume
-
-# Convert existing Q&A to training format
-python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
+python run.py chunk --resume
+python run.py generate-qa --resume --provider openai
 ```
 
-## Data Flow
-
-### Complete Pipeline
+### Use local models
 
 ```bash
-📁 /data/incoming/          # Source documents (PDF, MD, HTML, DOCX, TXT)
-    ↓ document_chunker/
-📁 /data/chunks/            # document1_chunks.json, document2_chunks.json
-    ↓ training_data_generator/ (resumable!)
-📁 /data/qa_results/        # document1_qa.json, document2_qa.json
-    ↓ convert_qa_to_training.py
-📁 /data/document_training_data/ # document1_trainingdata.jsonl, document2_trainingdata.jsonl
-    ↓ finetune-model/
-📁 /finetune-model/output/  # Fine-tuned LoRA adapters
-    ↓ fact_checker/ (optional)
-📁 /data/results/           # validation_report.json, training_data_filtered.json
+python run.py generate-qa --provider local --model llama2:7b
+python run.py validate --provider local --model llama2:7b
 ```
 
-## Key Features
-
-### End-to-End ML Pipeline
-
-- **Complete Data Pipeline**: Document processing → Q&A generation → Training data
-- **Advanced Fine-Tuning**: LoRA-based training with hardware optimization
-- **Production-Ready**: Comprehensive error handling and monitoring
-- **Format Conversion**: Automatic Q&A to Alpaca training format conversion
-
-### **Enhanced Training Framework**
-
-- **Hardware-Aware**: Automatic GPU detection and memory optimization
-- **Progressive Loading**: Fallback strategies for model loading
-- **LoRA Integration**: Efficient fine-tuning with Low-Rank Adaptation
-- **Real-Time Monitoring**: Training metrics and performance tracking
-
-### **Robust Data Generation**
-
-- **Resumability**: Chunk-level tracking with interrupt safety
-- **Error Isolation**: Failed chunks don't affect completed ones
-- **Multiple LLM Providers**: OpenAI, Claude, Gemini, Local/Ollama
-- **Quality Validation**: Optional fact-checking and filtering
-
-### **Developer Experience**
-
-- **Modular Architecture**: Run components independently
-- **Comprehensive Logging**: Enhanced error tracking and debugging
-- **Flexible Configuration**: YAML and environment-based settings
-- **Clear Documentation**: Detailed guides for each component
-
-## 🔧 **Configuration**
-
-All settings are managed through `config.env` / `.env`:
-
-```bash
-# LLM Provider Settings
-GENERATOR_PROVIDER=local
-GENERATOR_MODEL=qwen3:14b
-GENERATOR_TEMPERATURE=0.3
-OLLAMA_BASE_URL=http://192.168.50.133:11434
-
-# Directory Structure
-GENERATOR_INCOMING_DIR=/data/incoming
-GENERATOR_PROCESS_DIR=/data/chunks
-GENERATOR_OUTPUT_DIR=/data/qa_results
-GENERATOR_OUTPUT_FILE=/data/results/training_data.json
-
-# Processing Settings
-GENERATOR_CHUNK_SIZE=1000
-GENERATOR_CHUNK_OVERLAP=200
-GENERATOR_QUESTIONS_PER_CHUNK=5
-GENERATOR_RESUME=true
-GENERATOR_BATCH_PROCESSING=false
-
-# Logging Settings
-QA_LOG_DIR=/data/logs                    # Q&A generation failure logs
-
-# Validation Settings
-VALIDATOR_PROVIDER=local
-VALIDATOR_MODEL=qwen3:14b
-VALIDATOR_THRESHOLD=8.0
-```
-
-## 📚 **Module Documentation**
-
-- **[Document Chunker](document_chunker/README.md)**: Document processing and chunking
-- **[Training Data Generator](training_data_generator/README.md)**: Q&A generation and combining
-- **[Fact Checker](fact_checker/README.md)**: Quality validation and filtering
-- **[Fine-Tuning Framework](finetune-model/README_ENHANCED.md)**: Complete model training pipeline
-
-## 🎯 **Use Cases**
-
-### **Rapid Prototyping**
-
-```bash
-# Process small document set and train quickly
-./run_split_workflow.sh --step 1
-./run_split_workflow.sh --step 2
-python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
-cd finetune-model && python3 finetune.py
-```
-
-### **Production Training**
-
-```bash
-# Full pipeline with validation
-./run_split_workflow.sh
-python3 training_data_generator/src/convert_qa_to_training.py data/qa_results
-cd finetune-model && python3 finetune.py --config config-production.yaml
-cd ../fact_checker && python src/validate_qa.py --input /data/results/training_data.json
-```
-
-### **Large Document Collections**
-
-```bash
-# Process in phases with resumability
-./run_split_workflow.sh --step 1           # Chunk all documents
-./run_split_workflow.sh --step 2 --resume  # Generate Q&A (resumable)
-./run_split_workflow.sh --step 3           # Combine results
-
-# Convert and train on specific documents
-python3 training_data_generator/src/convert_qa_to_training.py \
-  "data/qa_results/ImportantDoc_qa.json" \
-  --output-dir data/training/priority/
-```
-
-### **Multi-Document Training**
-
-```bash
-# Convert multiple Q&A files to training format
-python3 training_data_generator/src/convert_qa_to_training.py data/qa_results \
-  --output-dir data/combined_training/
-
-# Train on combined dataset
-cd finetune-model
-python3 finetune.py --dataset-path "../data/combined_training/*.jsonl"
-```
-
-## 🔍 **Monitoring Progress**
-
-- **Data Generation**: Check `/data/qa_results/qa_generation_summary.json`
-- **Training Progress**: Monitor `/finetune-model/*/logs/latest.log`
-- **Individual Files**: Each `*_qa.json` shows completion status
-- **Model Checkpoints**: Saved in `/finetune-model/output-dir/`
-- **Error Logs**: Check `/data/logs/qa_failures_*.log`
-
-## 🚨 **Troubleshooting**
-
-### **Common Issues**
-
-1. **Import Errors**: Ensure conda environment is activated
-2. **Permission Errors**: Scripts auto-fallback to local `./data/` directories
-3. **Memory Issues**: Fine-tuning automatically optimizes for available hardware
-4. **Training Failures**: Check dataset path in config and format validation
-
-### **Error Recovery**
-
-- **Failed Q&A Generation**: Use `--resume` flag to continue
-- **Training Interruption**: Resume from latest checkpoint automatically
-- **Data Format Issues**: Use conversion script to fix format
-- **Hardware Limitations**: Framework automatically adjusts to available resources
-
-## 🆕 **Recent Enhancements**
-
-### **v2.0 Features**
-
-- ✅ **Complete Fine-Tuning Pipeline**: End-to-end training framework
-- ✅ **Enhanced Error Handling**: Improved LangChain compatibility and logging
-- ✅ **Format Conversion**: Automatic Q&A to training data conversion
-- ✅ **Hardware Optimization**: Automatic GPU detection and memory management
-- ✅ **Modular Architecture**: Clear separation of concerns
-- ✅ **Production Ready**: Comprehensive monitoring and error recovery
-
-### **Performance Improvements**
-
-- 🚀 **Faster Processing**: Optimized chunk processing and resume capabilities
-- 🚀 **Better Resource Usage**: Hardware-aware training optimization
-- 🚀 **Reduced Memory Footprint**: Efficient model loading strategies
-- 🚀 **Improved Reliability**: Enhanced error isolation and recovery
-
-## 🎉 **Complete ML Workflow**
-
-This project now provides a **complete machine learning pipeline**:
-
-1. **📄 Document Processing**: Multi-format document ingestion and chunking
-2. **🤖 Q&A Generation**: AI-powered training data creation with resumability
-3. **🔄 Format Conversion**: Automatic transformation to training formats
-4. **🎯 Model Fine-Tuning**: LoRA-based training with hardware optimization
-5. **✅ Quality Assurance**: Optional validation and filtering
-6. **📊 Monitoring**: Comprehensive logging and progress tracking
-
-Perfect for creating **domain-specific chatbots** and **specialized AI assistants** from your documents!
+This new structure dramatically simplifies your workflow while preserving the ability to run steps independently and resume failed operations.

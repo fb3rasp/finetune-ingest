@@ -1,6 +1,7 @@
 from typing import Dict, List, Optional, Any
 from datetime import datetime
 import json
+from pathlib import Path
 
 try:
     from langchain.chains import LLMChain
@@ -76,13 +77,13 @@ class JSONValidationParser(BaseOutputParser):
 
 
 class QAValidator:
-    def __init__(self, provider: str = 'openai', model: Optional[str] = None, api_key: Optional[str] = None, temperature: float = 0.1, validation_threshold: float = 8.0, batch_size: int = 10, verbose: bool = False, **provider_kwargs):
+    def __init__(self, provider: str = 'openai', model: Optional[str] = None, api_key: Optional[str] = None, temperature: float = 0.1, validation_threshold: float = 8.0, batch_size: int = 10, verbose: bool = False, reasoning: bool = False, **provider_kwargs):
         self.provider = provider
         self.model = model
         self.validation_threshold = validation_threshold
         self.batch_size = batch_size
         self.verbose = verbose
-        self.llm_provider = UnifiedLLMProvider(provider=LLMProvider(provider.lower()), model=model, api_key=api_key, temperature=temperature, max_tokens=1000, **provider_kwargs)
+        self.llm_provider = UnifiedLLMProvider(provider=LLMProvider(provider.lower()), model=model, api_key=api_key, temperature=temperature, max_tokens=1000, reasoning=reasoning, **provider_kwargs)
         self.validation_parser = JSONValidationParser()
         self.validation_chain = self._create_validation_chain()
 
@@ -170,18 +171,40 @@ JSON Response:"""
             original_qa_metadata=original_metadata,
         )
 
-    def validate_training_data(self, training_data_path: str, output_path: Optional[str] = None) -> Dict[str, Any]:
+    def validate_training_data(self, training_data_path: str, output_path: Optional[str] = None, filtered_output_path: Optional[str] = None, filter_threshold: float = 7.0, resume: bool = False) -> Dict[str, Any]:
+        # Load existing validation results if resuming
+        existing_results = []
+        completed_indices = set()
+        
+        if resume and output_path and Path(output_path).exists():
+            try:
+                with open(output_path, 'r', encoding='utf-8') as f:
+                    existing_report = json.load(f)
+                existing_results = existing_report.get('validation_results', [])
+                completed_indices = {r['qa_pair_index'] for r in existing_results}
+                log_message(f"Resuming validation: {len(existing_results)} pairs already validated")
+            except Exception as e:
+                log_message(f"Warning: Could not load existing validation results: {e}")
+        
         with open(training_data_path, 'r', encoding='utf-8') as f:
             data = json.load(f)
         qa_pairs = data.get('training_pairs', [])
         documents = data.get('documents', [])
         doc_lookup = {d['file_info']['file_name']: d.get('chunks', []) for d in documents if 'file_info' in d}
-        results: List[ValidationResult] = []
+        results: List[ValidationResult] = existing_results
         
         total_pairs = len(qa_pairs)
         log_message(f"Starting validation of {total_pairs} QA pairs...")
         
         for i, qa in enumerate(qa_pairs, 1):
+            qa_index = i - 1
+            
+            # Skip if already completed
+            if qa_index in completed_indices:
+                if self.verbose:
+                    log_message(f"[{i}/{total_pairs}] Already validated, skipping")
+                continue
+            
             # Progress logging (verbose mode)
             if self.verbose:
                 log_message(f"[{i}/{total_pairs}] Validating QA pair from {qa.get('file_name', 'unknown')} (chunk {qa.get('chunk_id', 'N/A')})")
@@ -197,8 +220,13 @@ JSON Response:"""
                     src = chunks[qa['chunk_id']].get('text', '')
             
             # Validate the QA pair (pass the index for cross-referencing)
-            result = self.validate_qa_pair(qa, src or 'Source text not available', qa_index=i-1)
+            result = self.validate_qa_pair(qa, src or 'Source text not available', qa_index=qa_index)
             results.append(result)
+            completed_indices.add(qa_index)
+            
+            # Save progress incrementally if resuming
+            if resume and output_path:
+                self._save_incremental_progress(results, output_path, training_data_path, filter_threshold)
             
             # Log the result with scores (verbose mode)
             if self.verbose:
@@ -315,5 +343,71 @@ JSON Response:"""
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(report, f, indent=2)
         return report
+
+    def _save_incremental_progress(self, results: List[ValidationResult], output_path: str, training_data_path: str, filter_threshold: float):
+        """Save validation progress incrementally."""
+        try:
+            # Convert ValidationResult objects to dictionaries
+            validation_results_detailed = [r.dict() for r in results]
+            
+            # Create cross-reference index
+            cross_reference_index = {}
+            for r in results:
+                cross_reference_index[r.qa_pair_index] = {
+                    'qa_pair_id': r.qa_pair_id,
+                    'validation_status': r.validation_score.validation_status,
+                    'overall_score': r.validation_score.overall_score,
+                    'source_file': r.source_file,
+                    'chunk_id': r.chunk_id,
+                }
+            
+            # Calculate current statistics
+            total = len(results)
+            pass_count = sum(1 for r in results if r.validation_score.validation_status == 'PASS')
+            needs_review_count = sum(1 for r in results if r.validation_score.validation_status == 'NEEDS_REVIEW')
+            fail_count = sum(1 for r in results if r.validation_score.validation_status == 'FAIL')
+            avg = lambda xs: round(sum(xs)/len(xs), 2) if xs else 0.0
+            
+            summary = {
+                'total_qa_pairs': total,
+                'pass_count': pass_count,
+                'needs_review_count': needs_review_count,
+                'fail_count': fail_count,
+                'pass_rate': (pass_count/total) if total else 0.0,
+                'average_scores': {
+                    'overall': avg([r.validation_score.overall_score for r in results]),
+                    'factual_accuracy': avg([r.validation_score.factual_accuracy_score for r in results]),
+                    'completeness': avg([r.validation_score.completeness_score for r in results]),
+                    'consistency': avg([r.validation_score.consistency_score for r in results]),
+                },
+                'total_processing_time': sum(r.processing_time for r in results),
+            }
+            
+            # Create progress report
+            progress_report = {
+                'validation_metadata': {
+                    'validator_model': f"{self.provider}:{self.llm_provider.model}",
+                    'validation_timestamp': datetime.now().isoformat(),
+                    'total_qa_pairs': total,
+                    'validation_threshold': self.validation_threshold,
+                    'source_file': training_data_path,
+                    'status': 'in_progress',
+                    'processing_info': {
+                        'verbose_mode': self.verbose,
+                        'batch_size': self.batch_size,
+                        'total_processing_time_seconds': summary['total_processing_time'],
+                    }
+                },
+                'summary_statistics': summary,
+                'cross_reference_index': cross_reference_index,
+                'validation_results': validation_results_detailed,
+            }
+            
+            # Save progress report
+            with open(output_path, 'w', encoding='utf-8') as f:
+                json.dump(progress_report, f, indent=2)
+                
+        except Exception as e:
+            log_message(f"Warning: Failed to save incremental progress: {e}")
 
 
