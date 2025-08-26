@@ -15,8 +15,8 @@ except ImportError:
     class BaseLLMOutputParser: ...  # type: ignore
 from pydantic import BaseModel, Field
 
-from common.llm.llm_providers import UnifiedLLMProvider
-from common.utils.helpers import log_message
+from pipeline.core.llm.llm_providers import UnifiedLLMProvider
+from pipeline.core.utils.helpers import log_message
 
 
 def log_failed_response(error_type: str, prompt: str, response: str, model: str, chunk_info: Dict = None):
@@ -28,8 +28,8 @@ def log_failed_response(error_type: str, prompt: str, response: str, model: str,
         if not log_dir:
             # Find project root by locating the common directory
             current_file = os.path.abspath(__file__)
-            # Since this file is in common/llm/, go up two levels to reach project root
-            project_root = os.path.dirname(os.path.dirname(os.path.dirname(current_file)))
+            # Since this file is in pipeline/core/llm/, go up four levels to reach project root
+            project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(current_file)))))
             log_dir = os.path.join(project_root, "data", "logs")
         
         os.makedirs(log_dir, exist_ok=True)
@@ -416,5 +416,3 @@ OUTPUT:
                 if on_chunk_done and enhanced_for_chunk:
                     on_chunk_done(enhanced_for_chunk)
         return all_qa
-
-

@@ -11,8 +11,8 @@ from typing import Dict, List
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from common.document_processing import LangChainDocumentLoader, EnhancedTextSplitter
-from common.utils.helpers import log_message, save_json_atomic, load_json_if_exists
+from pipeline.core.document_processing import LangChainDocumentLoader, EnhancedTextSplitter
+from pipeline.core.utils.helpers import log_message, save_json_atomic, load_json_if_exists
 from pipeline.config import PipelineConfig
 from .base_step import BaseStep
 

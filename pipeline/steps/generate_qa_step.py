@@ -11,8 +11,8 @@ from typing import Dict, List
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from common.llm import UnifiedLLMProvider, QAGenerationChain
-from common.utils.helpers import log_message, save_json_atomic, load_json_if_exists
+from pipeline.core.llm import UnifiedLLMProvider, QAGenerationChain
+from pipeline.core.utils.helpers import log_message, save_json_atomic, load_json_if_exists
 from pipeline.config import PipelineConfig
 from .base_step import BaseStep
 
@@ -183,7 +183,7 @@ class GenerateQAStep(BaseStep):
             }
             
             training_data_file = Path(self.config.training_data_file)
-            save_json_atomic(str(training_data_file), combined_data)
+            save_json_atomic(combined_data, str(training_data_file))
             self.log(f"Saved combined training data to {training_data_file}")
         
         # Summary

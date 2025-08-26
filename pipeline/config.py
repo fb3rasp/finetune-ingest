@@ -63,8 +63,15 @@ class PipelineConfig:
             chunks_dir=os.getenv("PIPELINE_CHUNKS_DIR", "data/document_chunks"),
             qa_dir=os.getenv("PIPELINE_QA_DIR", "data/document_training_data"),
             
+            # File paths
+            training_data_file=os.getenv("PIPELINE_TRAINING_DATA_FILE", "data/documents_training_data/training_data.json"),
+            validation_report_file=os.getenv("PIPELINE_VALIDATION_REPORT_FILE", "data/documents_training_data/validation_report.json"),
+            filtered_training_data_file=os.getenv("PIPELINE_FILTERED_TRAINING_DATA_FILE", "data/documents_training_data/training_data_filtered.json"),
+            final_training_data_file=os.getenv("PIPELINE_FINAL_TRAINING_DATA_FILE", "data/documents_training_data/training_data_final.jsonl"),
+            
             chunk_size=int(os.getenv("PIPELINE_CHUNK_SIZE", "1000")),
             chunk_overlap=int(os.getenv("PIPELINE_CHUNK_OVERLAP", "200")),
+            splitting_strategy=os.getenv("PIPELINE_SPLITTING_STRATEGY", "recursive"),
             
             llm_provider=os.getenv("PIPELINE_LLM_PROVIDER", "local"),
             llm_model=os.getenv("PIPELINE_LLM_MODEL", "llama3"),
@@ -81,4 +88,5 @@ class PipelineConfig:
             
             training_template=os.getenv("PIPELINE_TRAINING_TEMPLATE", "alpaca"),
             verbose=os.getenv("PIPELINE_VERBOSE", "false").lower() in ("true", "1", "yes"),
+            batch_size=int(os.getenv("PIPELINE_BATCH_SIZE", "10")),
         )

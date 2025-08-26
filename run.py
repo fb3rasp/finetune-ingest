@@ -153,9 +153,10 @@ def validate_qa(
 
 @app.command("format")
 def format_training_data(
-    input_file: str = typer.Option(None, "--input", "-i", help="Input filtered training data. Overrides .env setting."),
+    input_file: str = typer.Option(None, "--input", "-i", help="Input validation report. Overrides .env setting."),
     output_file: str = typer.Option(None, "--output", "-o", help="Output formatted training data. Overrides .env setting."),
     template: str = typer.Option(None, "--template", help="Training format template (alpaca, chatml, etc.). Overrides .env setting."),
+    threshold: float = typer.Option(None, "--threshold", help="Quality threshold for filtering (0.0 = no filtering). Overrides .env setting."),
     verbose: bool = typer.Option(None, "--verbose", "-v", help="Enable verbose output. Overrides .env setting.")
 ):
     """
@@ -166,13 +167,16 @@ def format_training_data(
     """
     config = PipelineConfig.from_env()
 
-    if input_file is not None: config.filtered_training_data_file = input_file
+    if input_file is not None: config.validation_report_file = input_file
     if output_file is not None: config.final_training_data_file = output_file
     if template is not None: config.training_template = template
     if verbose is not None: config.verbose = verbose
     
+    # Use threshold from command line or default to 0.0 (no filtering)
+    threshold_val = threshold if threshold is not None else 0.0
+    
     step = FormatStep(config)
-    success = step.run()
+    success = step.run(threshold=threshold_val)
     
     if success:
         typer.echo("✅ Training data formatting completed successfully!")
@@ -187,6 +191,7 @@ def run_full_pipeline(
     provider: str = typer.Option(None, "--provider", help="LLM provider. Overrides .env setting."),
     questions_per_chunk: int = typer.Option(None, "--questions-per-chunk", help="Number of Q&A pairs per chunk. Overrides .env setting."),
     validation_threshold: float = typer.Option(None, "--validation-threshold", help="Quality threshold for validation. Overrides .env setting."),
+    format_threshold: float = typer.Option(None, "--format-threshold", help="Quality threshold for formatting (0.0 = no filtering). Overrides .env setting."),
     resume: bool = typer.Option(None, "--resume", help="Resume from existing progress. Overrides .env setting."),
     verbose: bool = typer.Option(None, "--verbose", "-v", help="Enable verbose output. Overrides .env setting.")
 ):
@@ -227,7 +232,7 @@ def run_full_pipeline(
     
     # Step 4: Format
     typer.echo("\n📝 Step 4: Formatting training data...")
-    format_training_data(verbose=verbose)
+    format_training_data(threshold=format_threshold, verbose=verbose)
     
     typer.echo("\n🎉 Complete pipeline finished successfully!")
     typer.echo("Your training data is ready at: data/document_training_data/training_data_final.jsonl")

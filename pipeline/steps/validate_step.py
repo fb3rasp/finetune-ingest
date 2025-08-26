@@ -9,8 +9,8 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from fact_checker.src.langchain_processing.qa_validator import QAValidator
-from common.utils.helpers import log_message
+from pipeline.core.llm import QAValidator
+from pipeline.core.utils.helpers import log_message
 from pipeline.config import PipelineConfig
 from .base_step import BaseStep
 
@@ -48,8 +48,6 @@ class ValidateStep(BaseStep):
             report = self.validator.validate_training_data(
                 training_data_path=self.config.training_data_file,
                 output_path=self.config.validation_report_file,
-                filtered_output_path=self.config.filtered_training_data_file,
-                filter_threshold=self.config.filter_threshold,
                 resume=resume
             )
             

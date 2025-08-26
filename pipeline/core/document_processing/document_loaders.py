@@ -20,7 +20,7 @@ try:
 except ImportError:
     class Document: ...  # type: ignore
 
-from common.utils.helpers import log_message
+from pipeline.core.utils.helpers import log_message
 
 
 @contextmanager
@@ -169,5 +169,3 @@ class LangChainDocumentLoader:
                 documents.append(file_path)
         log_message(f"Found {len(documents)} documents to process")
         return documents
-
-

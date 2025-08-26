@@ -31,7 +31,7 @@ except ImportError:
     ChatOllama = None
 from langchain.schema import HumanMessage, SystemMessage
 
-from common.utils.helpers import log_message
+from pipeline.core.utils.helpers import log_message
 
 
 class LLMProvider(Enum):
@@ -171,5 +171,3 @@ class UnifiedLLMProvider:
             LLMProvider.LOCAL: ["llama3", "llama2", "mistral", "codellama", "vicuna"],
         }
         return models.get(provider, [])
-
-

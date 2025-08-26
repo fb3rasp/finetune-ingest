@@ -12,7 +12,7 @@ import os
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 sys.path.insert(0, str(PROJECT_ROOT))
 
-from common.utils.helpers import log_message
+from pipeline.core.utils.helpers import log_message
 from pipeline.config import PipelineConfig
 
 

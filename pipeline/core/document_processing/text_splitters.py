@@ -9,7 +9,7 @@ try:
     from langchain.schema import Document
 except ImportError:
     class Document: ...  # type: ignore
-from common.utils.helpers import log_message
+from pipeline.core.utils.helpers import log_message
 
 
 class EnhancedTextSplitter:
@@ -71,5 +71,3 @@ class EnhancedTextSplitter:
                 all_chunks.append(chunk)
         log_message(f"Created {len(all_chunks)} chunks from {len(documents)} documents")
         return all_chunks
-
-

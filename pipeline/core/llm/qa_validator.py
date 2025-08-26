@@ -13,8 +13,8 @@ except ImportError:
     class BaseOutputParser: ...  # type: ignore
 
 from pydantic import BaseModel, Field
-from common.llm.llm_providers import UnifiedLLMProvider, LLMProvider
-from common.utils.helpers import log_message
+from pipeline.core.llm.llm_providers import UnifiedLLMProvider, LLMProvider
+from pipeline.core.utils.helpers import log_message
 
 
 class ValidationScore(BaseModel):
@@ -33,7 +33,7 @@ class ValidationResult(BaseModel):
     question: str
     answer: str
     source_file: str
-    chunk_id: int
+    chunk_id: str  # Changed from int to str to handle string chunk IDs
     chunk_index: Optional[int] = None
     validation_score: ValidationScore
     processing_time: float
@@ -163,15 +163,15 @@ JSON Response:"""
             qa_pair_index=qa_index,
             question=qa_pair['question'],
             answer=qa_pair['answer'],
-            source_file=qa_pair.get('file_name', 'unknown'),
-            chunk_id=qa_pair.get('chunk_id', 0),
+            source_file=qa_pair.get('file_name') or qa_pair.get('source_file', 'unknown'),
+            chunk_id=str(qa_pair.get('chunk_id', 'unknown')),
             chunk_index=qa_pair.get('chunk_index'),
             validation_score=score,
             processing_time=(datetime.now()-start_time).total_seconds(),
             original_qa_metadata=original_metadata,
         )
 
-    def validate_training_data(self, training_data_path: str, output_path: Optional[str] = None, filtered_output_path: Optional[str] = None, filter_threshold: float = 7.0, resume: bool = False) -> Dict[str, Any]:
+    def validate_training_data(self, training_data_path: str, output_path: Optional[str] = None, resume: bool = False) -> Dict[str, Any]:
         # Load existing validation results if resuming
         existing_results = []
         completed_indices = set()
@@ -180,9 +180,35 @@ JSON Response:"""
             try:
                 with open(output_path, 'r', encoding='utf-8') as f:
                     existing_report = json.load(f)
-                existing_results = existing_report.get('validation_results', [])
-                completed_indices = {r['qa_pair_index'] for r in existing_results}
-                log_message(f"Resuming validation: {len(existing_results)} pairs already validated")
+                existing_results_dict = existing_report.get('validation_results', [])
+                completed_indices = {r['qa_pair_index'] for r in existing_results_dict}
+                log_message(f"Resuming validation: {len(existing_results_dict)} pairs already validated")
+                
+                # Convert dictionary results back to ValidationResult objects
+                for result_dict in existing_results_dict:
+                    try:
+                        # Convert nested validation_score dict back to ValidationScore object
+                        validation_score_dict = result_dict.get('validation_score', {})
+                        validation_score = ValidationScore(**validation_score_dict)
+                        
+                        # Create ValidationResult object
+                        validation_result = ValidationResult(
+                            qa_pair_id=result_dict.get('qa_pair_id', ''),
+                            qa_pair_index=result_dict.get('qa_pair_index', 0),
+                            question=result_dict.get('question', ''),
+                            answer=result_dict.get('answer', ''),
+                            source_file=result_dict.get('source_file', ''),
+                            chunk_id=result_dict.get('chunk_id', ''),
+                            chunk_index=result_dict.get('chunk_index'),
+                            validation_score=validation_score,
+                            processing_time=result_dict.get('processing_time', 0.0),
+                            original_qa_metadata=result_dict.get('original_qa_metadata')
+                        )
+                        existing_results.append(validation_result)
+                    except Exception as e:
+                        log_message(f"Warning: Could not convert existing result: {e}")
+                        continue
+                        
             except Exception as e:
                 log_message(f"Warning: Could not load existing validation results: {e}")
         
@@ -226,7 +252,8 @@ JSON Response:"""
             
             # Save progress incrementally if resuming
             if resume and output_path:
-                self._save_incremental_progress(results, output_path, training_data_path, filter_threshold)
+                log_message(f"Saving incremental progress: {len(results)} results to {output_path}")
+                self._save_incremental_progress(results, output_path, training_data_path)
             
             # Log the result with scores (verbose mode)
             if self.verbose:
@@ -256,6 +283,29 @@ JSON Response:"""
         needs_review_count = sum(1 for r in results if r.validation_score.validation_status == 'NEEDS_REVIEW')
         fail_count = sum(1 for r in results if r.validation_score.validation_status == 'FAIL')
         avg = lambda xs: round(sum(xs)/len(xs), 2) if xs else 0.0
+        
+        # Calculate score distribution
+        overall_scores = [r.validation_score.overall_score for r in results]
+        score_distribution = {}
+        for i in range(11):  # 0-10 scores
+            count = sum(1 for score in overall_scores if i <= score < i + 1)
+            percentage = (count / total * 100) if total > 0 else 0
+            score_distribution[f"{i}-{i+1}"] = {"count": count, "percentage": round(percentage, 1)}
+        
+        # Group into broader ranges for summary
+        score_ranges = {
+            "0-1": sum(1 for score in overall_scores if 0 <= score < 1),
+            "1-2": sum(1 for score in overall_scores if 1 <= score < 2),
+            "2-3": sum(1 for score in overall_scores if 2 <= score < 3),
+            "3-4": sum(1 for score in overall_scores if 3 <= score < 4),
+            "4-5": sum(1 for score in overall_scores if 4 <= score < 5),
+            "5-6": sum(1 for score in overall_scores if 5 <= score < 6),
+            "6-7": sum(1 for score in overall_scores if 6 <= score < 7),
+            "7-8": sum(1 for score in overall_scores if 7 <= score < 8),
+            "8-9": sum(1 for score in overall_scores if 8 <= score < 9),
+            "9-10": sum(1 for score in overall_scores if 9 <= score <= 10),
+        }
+        
         summary = {
             'total_qa_pairs': total,
             'pass_count': pass_count,
@@ -268,6 +318,8 @@ JSON Response:"""
                 'completeness': avg([r.validation_score.completeness_score for r in results]),
                 'consistency': avg([r.validation_score.consistency_score for r in results]),
             },
+            'score_distribution': score_distribution,
+            'score_ranges': score_ranges,
             'total_processing_time': sum(r.processing_time for r in results),
         }
         # Create cross-reference index for easy lookup
@@ -342,9 +394,24 @@ JSON Response:"""
         if output_path:
             with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(report, f, indent=2)
+        
+        # Print score distribution summary
+        log_message("=" * 50)
+        log_message("VALIDATION SUMMARY")
+        log_message("=" * 50)
+        log_message(f"Total Q&A pairs: {total}")
+        log_message(f"PASS: {pass_count} ({pass_count/total*100:.1f}%)")
+        log_message(f"NEEDS_REVIEW: {needs_review_count} ({needs_review_count/total*100:.1f}%)")
+        log_message(f"FAIL: {fail_count} ({fail_count/total*100:.1f}%)")
+        log_message("")
+        log_message("SCORE DISTRIBUTION:")
+        for range_name, count in score_ranges.items():
+            percentage = (count / total * 100) if total > 0 else 0
+            log_message(f"Overall: {range_name}: {count} ({percentage:.1f}%)")
+        
         return report
 
-    def _save_incremental_progress(self, results: List[ValidationResult], output_path: str, training_data_path: str, filter_threshold: float):
+    def _save_incremental_progress(self, results: List[ValidationResult], output_path: str, training_data_path: str):
         """Save validation progress incrementally."""
         try:
             # Convert ValidationResult objects to dictionaries
@@ -409,5 +476,3 @@ JSON Response:"""
                 
         except Exception as e:
             log_message(f"Warning: Failed to save incremental progress: {e}")
-
-

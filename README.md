@@ -42,19 +42,19 @@ cp config.env.example config.env
 3. **Validate Quality**
 
    ```bash
-   python run.py validate --threshold 8.0 --filter-threshold 7.0
+   python run.py validate --verbose --resume
    ```
 
 4. **Format for Training**
 
    ```bash
-   python run.py format --template alpaca
+   python run.py format --template alpaca --threshold 8.0
    ```
 
 ### Run Complete Pipeline
 
 ```bash
-python run.py pipeline --provider openai --questions-per-chunk 3 --validation-threshold 8.0
+python run.py pipeline --provider openai --questions-per-chunk 3 --format-threshold 8.0
 ```
 
 ## Command Reference
@@ -89,35 +89,36 @@ Creates question-answer pairs from document chunks.
 
 ### `python run.py validate`
 
-Validates Q&A pairs for quality and accuracy.
+Validates Q&A pairs for quality and accuracy. **No filtering is applied during validation** - all Q&A pairs are validated and scored. A detailed score distribution summary is provided at the end.
 
 **Options:**
 
 - `--input`: Input training data file (default: `data/document_training_data/training_data.json`)
 - `--output`: Validation report file (default: `data/document_training_data/validation_report.json`)
-- `--filtered-output`: Filtered training data file (default: `data/document_training_data/training_data_filtered.json`)
 - `--provider`: LLM provider for validation
 - `--model`: Model for validation
-- `--threshold`: Pass/fail threshold (default: `8.0`)
-- `--filter-threshold`: Filtering threshold (default: `7.0`)
+- `--resume`: Resume from existing progress
 - `--verbose`: Enable detailed output
 
 ### `python run.py format`
 
-Formats validated Q&A pairs for model training.
+Formats validated Q&A pairs for model training. **Threshold filtering is applied during formatting** - you can specify a quality threshold to filter out low-quality Q&A pairs.
 
 **Options:**
 
-- `--input`: Filtered training data file (default: `data/document_training_data/training_data_filtered.json`)
+- `--input`: Input validation report file (default: `data/document_training_data/validation_report.json`)
 - `--output`: Final training data file (default: `data/document_training_data/training_data_final.jsonl`)
 - `--template`: Training format template (default: `alpaca`)
+- `--threshold`: Quality threshold for filtering (0.0 = no filtering, default: `0.0`)
 - `--verbose`: Enable detailed output
 
 ### `python run.py pipeline`
 
 Runs the complete pipeline in sequence.
 
-**Options:** Combines options from all individual steps.
+**Options:** Combines options from all individual steps, plus:
+
+- `--format-threshold`: Quality threshold for formatting (0.0 = no filtering)
 
 ## File Structure
 
@@ -127,9 +128,8 @@ data/
 ├── document_chunks/             # Chunked documents (intermediate)
 ├── document_training_data/      # Generated training data (output)
 │   ├── training_data.json       # Raw Q&A pairs
-│   ├── validation_report.json   # Quality validation report
-│   ├── training_data_filtered.json  # High-quality Q&A pairs
-│   └── training_data_final.jsonl    # Formatted for training
+│   ├── validation_report.json   # Quality validation report with score distribution
+│   └── training_data_final.jsonl    # Formatted for training (filtered by threshold)
 └── ...
 
 pipeline/                        # New unified pipeline code
@@ -151,6 +151,8 @@ run.py                          # Main CLI entry point
 3. **Resume Capability**: Failed steps can be resumed without starting over
 4. **Consistent Interface**: Same command structure for all operations
 5. **Simplified Project**: Fewer directories and scripts to manage
+6. **Flexible Filtering**: Validate once, format with different thresholds
+7. **Transparent Quality**: Complete score distribution to understand data quality
 
 ## Migration from Old Structure
 
@@ -177,7 +179,7 @@ PIPELINE_QUESTIONS_PER_CHUNK=3
 
 # Validation settings
 PIPELINE_VALIDATION_THRESHOLD=8.0
-PIPELINE_FILTER_THRESHOLD=7.0
+PIPELINE_FILTER_THRESHOLD=7.0  # Deprecated - use format threshold instead
 ```
 
 ## Examples
@@ -188,11 +190,11 @@ PIPELINE_FILTER_THRESHOLD=7.0
 # Step by step
 python run.py chunk --verbose
 python run.py generate-qa --provider openai --questions-per-chunk 5
-python run.py validate --threshold 8.5 --filter-threshold 7.5
-python run.py format
+python run.py validate --verbose --resume
+python run.py format --template alpaca --threshold 8.0
 
 # Or all at once
-python run.py pipeline --provider openai --questions-per-chunk 5 --validation-threshold 8.5 --verbose
+python run.py pipeline --provider openai --questions-per-chunk 5 --format-threshold 8.0 --verbose
 ```
 
 ### Resume interrupted work
@@ -207,6 +209,57 @@ python run.py generate-qa --resume --provider openai
 ```bash
 python run.py generate-qa --provider local --model llama2:7b
 python run.py validate --provider local --model llama2:7b
+```
+
+### Flexible threshold filtering
+
+```bash
+# Validate all Q&A pairs (no filtering)
+python run.py validate --verbose --resume
+
+# Format with different thresholds
+python run.py format --threshold 8.0    # Only include Q&A pairs with score >= 8.0
+python run.py format --threshold 7.5    # Only include Q&A pairs with score >= 7.5
+python run.py format --threshold 0.0    # Include all Q&A pairs (no filtering)
+```
+
+## New Workflow: Validate Once, Format Multiple Times
+
+The new approach separates validation from filtering:
+
+1. **Validation Step**: Validates all Q&A pairs and provides a detailed score distribution
+2. **Format Step**: Applies threshold filtering during formatting
+
+This allows you to:
+
+- Run validation once and see the complete quality distribution
+- Try different thresholds without re-validating
+- Make informed decisions about quality thresholds based on the score distribution
+
+### Score Distribution Example
+
+After validation, you'll see output like:
+
+```
+==================================================
+VALIDATION SUMMARY
+==================================================
+Total Q&A pairs: 5826
+PASS: 5712 (98.0%)
+NEEDS_REVIEW: 98 (1.7%)
+FAIL: 16 (0.3%)
+
+SCORE DISTRIBUTION:
+Overall: 0-1: 0 (0.0%)
+Overall: 1-2: 0 (0.0%)
+Overall: 2-3: 0 (0.0%)
+Overall: 3-4: 0 (0.0%)
+Overall: 4-5: 0 (0.0%)
+Overall: 5-6: 0 (0.0%)
+Overall: 6-7: 16 (0.3%)
+Overall: 7-8: 98 (1.7%)
+Overall: 8-9: 1250 (21.5%)
+Overall: 9-10: 4462 (76.6%)
 ```
 
 This new structure dramatically simplifies your workflow while preserving the ability to run steps independently and resume failed operations.

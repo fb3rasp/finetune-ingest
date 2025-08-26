@@ -42,5 +42,3 @@ def load_json_if_exists(path: str):
         return None
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
-
-
