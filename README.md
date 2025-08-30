@@ -122,7 +122,7 @@ Runs the complete pipeline in sequence.
 
 ## File Structure
 
-```
+```bash
 data/
 ├── documents/                    # Source documents (input)
 ├── document_chunks/             # Chunked documents (intermediate)
@@ -240,7 +240,7 @@ This allows you to:
 
 After validation, you'll see output like:
 
-```
+```bash
 ==================================================
 VALIDATION SUMMARY
 ==================================================
