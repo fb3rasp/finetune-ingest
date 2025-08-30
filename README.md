@@ -39,13 +39,19 @@ cp config.env.example config.env
    python run.py generate-qa --provider openai --questions-per-chunk 3
    ```
 
-3. **Validate Quality**
+3. **Combine Q&A Files** (if needed)
+
+   ```bash
+   python run.py combine --input-dir data/qa_results --output data/results/training_data.json
+   ```
+
+4. **Validate Quality**
 
    ```bash
    python run.py validate --verbose --resume
    ```
 
-4. **Format for Training**
+5. **Format for Training**
 
    ```bash
    python run.py format --template alpaca --threshold 8.0
@@ -98,6 +104,16 @@ Validates Q&A pairs for quality and accuracy. **No filtering is applied during v
 - `--provider`: LLM provider for validation
 - `--model`: Model for validation
 - `--resume`: Resume from existing progress
+- `--verbose`: Enable detailed output
+
+### `python run.py combine`
+
+Combines individual Q&A files into a single training data file.
+
+**Options:**
+
+- `--input-dir`: Directory containing Q&A files to combine (default: `_data/qa_results`)
+- `--output`: Output combined training data file (default: `_data/results/training_data.json`)
 - `--verbose`: Enable detailed output
 
 ### `python run.py format`
@@ -190,6 +206,7 @@ PIPELINE_FILTER_THRESHOLD=7.0  # Deprecated - use format threshold instead
 # Step by step
 python run.py chunk --verbose
 python run.py generate-qa --provider openai --questions-per-chunk 5
+python run.py combine --verbose  # Optional: if you have separate Q&A files
 python run.py validate --verbose --resume
 python run.py format --template alpaca --threshold 8.0
 

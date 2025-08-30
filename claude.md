@@ -14,6 +14,7 @@ This is a Training Data Pipeline for ML fine-tuning that processes documents int
 ### Pipeline Steps
 - `python run.py chunk --verbose` - Chunk documents
 - `python run.py generate-qa --provider openai --questions-per-chunk 3` - Generate Q&A pairs
+- `python run.py combine --input-dir _data/qa_results --output _data/results/training_data.json` - Combine Q&A files
 - `python run.py validate --verbose --resume` - Validate Q&A quality
 - `python run.py format --template alpaca --threshold 8.0` - Format for training
 

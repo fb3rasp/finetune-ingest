@@ -22,6 +22,7 @@ from pipeline.steps.generate_qa_step import GenerateQAStep
 from pipeline.steps.validate_step import ValidateStep
 from pipeline.steps.format_step import FormatStep
 from pipeline.config import PipelineConfig
+from combine_qa_files import combine_qa_files
 
 app = typer.Typer(
     name="run",
@@ -182,6 +183,31 @@ def format_training_data(
         typer.echo("✅ Training data formatting completed successfully!")
     else:
         typer.echo("❌ Training data formatting failed!", err=True)
+        raise typer.Exit(1)
+
+@app.command("combine")
+def combine_qa_files_cmd(
+    input_dir: str = typer.Option("_data/qa_results", "--input-dir", "-i", help="Directory containing Q&A files to combine"),
+    output_file: str = typer.Option("_data/results/training_data.json", "--output", "-o", help="Output combined training data file"),
+    verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output")
+):
+    """
+    Combine individual Q&A files into a single training data file.
+    
+    Takes individual Q&A result files from the Q&A generation step and combines
+    them into the unified format expected by the validation step.
+    """
+    try:
+        success = combine_qa_files(qa_dir=input_dir, output_file=output_file)
+        
+        if success:
+            typer.echo("✅ Q&A files combined successfully!")
+        else:
+            typer.echo("❌ No Q&A files found to combine!", err=True)
+            raise typer.Exit(1)
+            
+    except Exception as e:
+        typer.echo(f"❌ Failed to combine Q&A files: {e}", err=True)
         raise typer.Exit(1)
 
 @app.command("pipeline")
