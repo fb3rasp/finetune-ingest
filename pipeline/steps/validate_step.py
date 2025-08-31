@@ -42,6 +42,9 @@ class ValidateStep(BaseStep):
         
         if not self.check_prerequisites():
             return False
+
+        # Log the exact files being used for validation
+        self.log(f"Reading training data from: {self.config.training_data_file}")
         
         try:
             # Run validation
@@ -62,8 +65,8 @@ class ValidateStep(BaseStep):
                 self.log(f"Failed: {stats.get('fail_count', 0)}")
                 self.log(f"Pass rate: {stats.get('pass_rate', 0):.1%}")
                 
-                if self.config.filtered_training_data_file:
-                    self.log(f"Filtered data saved to: {self.config.filtered_training_data_file}")
+                # Validation does not perform filtering; just log the report path
+                self.log(f"Validation report saved to: {self.config.validation_report_file}")
             
             return True
             

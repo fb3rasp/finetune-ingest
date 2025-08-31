@@ -61,49 +61,44 @@ class FormatStep(BaseStep):
         return formatted_lines
     
     def run(self, threshold: float = 0.0) -> bool:
-        """Run the formatting step."""
+        """Run formatting: filter validated Q&A and write JSON with selected fields."""
         self.log("Starting training data formatting step...")
-        
+
         if not self.check_prerequisites():
             return False
-        
+
         try:
             # Load validation report
             with open(self.config.validation_report_file, 'r', encoding='utf-8') as f:
-                validation_report = json.load(f)
-            
-            qa_pairs = validation_report.get('validation_results', [])
+                report = json.load(f)
+
+            qa_pairs = report.get('validation_results', [])
             if not qa_pairs:
                 self.log("No Q&A pairs found in validation report", "error")
                 return False
-            
-            # Format based on template
-            if self.config.training_template == "alpaca":
-                formatted_lines = self.format_alpaca(qa_pairs, threshold)
-            else:
-                self.log(f"Unsupported training template: {self.config.training_template}", "error")
-                return False
-            
-            if not formatted_lines:
-                self.log("No training examples generated after formatting", "error")
-                return False
-            
-            # Save formatted training data
-            output_file = Path(self.config.final_training_data_file)
-            output_file.parent.mkdir(parents=True, exist_ok=True)
-            
-            with open(output_file, 'w', encoding='utf-8') as f:
-                for line in formatted_lines:
-                    f.write(line + '\n')
-            
-            self.log("=" * 50)
-            self.log(f"Formatting completed: {len(formatted_lines)} training examples")
-            if threshold > 0:
-                self.log(f"Applied threshold filter: {threshold}")
-            self.log(f"Final training data saved to: {output_file}")
-            
+
+            # Filter by validation_score threshold and collect desired fields
+            filtered = []
+            for pair in qa_pairs:
+                score = (pair.get('validation_score') or {}).get('overall_score', 0)
+                if threshold and score < threshold:
+                    continue
+                filtered.append({
+                    'question': pair.get('question'),
+                    'answer': pair.get('answer'),
+                    'validation_score': pair.get('validation_score'),
+                    'source_file': pair.get('source_file')
+                })
+
+            # Write out filtered JSON
+            output_path = Path(self.config.filtered_training_data_file)
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(output_path, 'w', encoding='utf-8') as out_f:
+                json.dump(filtered, out_f, ensure_ascii=False, indent=2)
+
+            self.log(f"Filtered training data ({len(filtered)} entries) saved to: {output_path}")
             return True
-            
+
         except Exception as e:
             self.log(f"Formatting failed: {e}", "error")
             return False

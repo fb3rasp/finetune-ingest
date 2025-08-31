@@ -22,7 +22,6 @@ from pipeline.steps.generate_qa_step import GenerateQAStep
 from pipeline.steps.validate_step import ValidateStep
 from pipeline.steps.format_step import FormatStep
 from pipeline.config import PipelineConfig
-from combine_qa_files import combine_qa_files
 
 app = typer.Typer(
     name="run",
@@ -197,6 +196,7 @@ def combine_qa_files_cmd(
     Takes individual Q&A result files from the Q&A generation step and combines
     them into the unified format expected by the validation step.
     """
+    from combine_qa_files import combine_qa_files
     try:
         success = combine_qa_files(qa_dir=input_dir, output_file=output_file)
         
