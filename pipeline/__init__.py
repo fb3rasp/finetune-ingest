@@ -7,8 +7,8 @@ A unified system for generating high-quality training data from documents.
 from .config import PipelineConfig
 from .steps.chunk_step import ChunkStep
 from .steps.generate_qa_step import GenerateQAStep
-from .steps.validate_step import ValidateStep
-from .steps.format_step import FormatStep
+from .steps.validate_qa_step import ValidateQAStep
+from .steps.filter_qa_step import FilterQAStep
 
 # Core modules
 from .core.document_processing import LangChainDocumentLoader, EnhancedTextSplitter
@@ -19,8 +19,8 @@ __all__ = [
     "PipelineConfig",
     "ChunkStep", 
     "GenerateQAStep",
-    "ValidateStep",
-    "FormatStep",
+    "ValidateQAStep",
+    "FilterQAStep",
     # Core modules
     "LangChainDocumentLoader",
     "EnhancedTextSplitter", 

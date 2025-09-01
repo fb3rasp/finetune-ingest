@@ -12,16 +12,23 @@ from dataclasses import dataclass, field
 class PipelineConfig:
     """Central configuration for all pipeline steps."""
     
-    # Input/Output directories
+    # Input/Output directories - step-based folder structure
     input_dir: str = "data/documents"
-    chunks_dir: str = "data/documents_chunks"
-    qa_dir: str = "data/documents_training_data"
+    chunks_dir: str = "_data/chunk"
+    qa_dir: str = "_data/generate-qa"
+    validate_qa_dir: str = "_data/validate-qa"
+    filter_qa_dir: str = "_data/filter-qa"
+    combine_dir: str = "_data/combine"
+    qa_train_dir: str = "_data/qa-train"
+    finetune_dir: str = "_data/finetune"
+    training_model_dir: str = "_data/finetune-model"
+    export_dir: str = "_data/export"
     
-    # File paths
-    training_data_file: str = "data/documents_training_data/training_data.json"
-    validation_report_file: str = "data/documents_training_data/validation_report.json"
-    filtered_training_data_file: str = "data/documents_training_data/training_data_filtered.json"
-    final_training_data_file: str = "data/documents_training_data/training_data_final.jsonl"
+    # File paths based on step directories
+    training_data_file: str = "_data/combine/training_data.json"
+    validation_report_file: str = "_data/validate-qa/validation_report.json"
+    filtered_training_data_file: str = "_data/filter-qa/training_data_filtered.json"
+    final_training_data_file: str = "_data/qa-train/training_data_final.jsonl"
     
     # Document chunking
     chunk_size: int = 1000
@@ -52,7 +59,9 @@ class PipelineConfig:
     
     def __post_init__(self):
         """Ensure all directories exist."""
-        for dir_path in [self.chunks_dir, self.qa_dir]:
+        for dir_path in [self.chunks_dir, self.qa_dir, self.validate_qa_dir, 
+                        self.filter_qa_dir, self.combine_dir, self.qa_train_dir,
+                        self.finetune_dir, self.training_model_dir, self.export_dir]:
             Path(dir_path).mkdir(parents=True, exist_ok=True)
     
     @classmethod
@@ -60,14 +69,21 @@ class PipelineConfig:
         """Create configuration from environment variables."""
         return cls(
             input_dir=os.getenv("PIPELINE_INPUT_DIR", "data/documents"),
-            chunks_dir=os.getenv("PIPELINE_CHUNKS_DIR", "data/document_chunks"),
-            qa_dir=os.getenv("PIPELINE_QA_DIR", "data/document_training_data"),
+            chunks_dir=os.getenv("PIPELINE_CHUNKS_DIR", "_data/chunk"),
+            qa_dir=os.getenv("PIPELINE_QA_DIR", "_data/generate-qa"),
+            validate_qa_dir=os.getenv("PIPELINE_VALIDATION_QA_DIR", "_data/validate-qa"),
+            filter_qa_dir=os.getenv("PIPELINE_FILTER_QA_DIR", "_data/filter-qa"),
+            combine_dir=os.getenv("PIPELINE_COMBINE_DIR", "_data/combine"),
+            qa_train_dir=os.getenv("PIPELINE_QA_TRAIN_DIR", "_data/qa-train"),
+            finetune_dir=os.getenv("PIPELINE_FINETUNE_DIR", "_data/finetune"),
+            training_model_dir=os.getenv("PIPELINE_TRAINING_MODEL_DIR", "_data/finetune-model"),
+            export_dir=os.getenv("PIPELINE_EXPORT_DIR", "_data/export"),
             
             # File paths
-            training_data_file=os.getenv("PIPELINE_TRAINING_DATA_FILE", "data/documents_training_data/training_data.json"),
-            validation_report_file=os.getenv("PIPELINE_VALIDATION_REPORT_FILE", "data/documents_training_data/validation_report.json"),
-            filtered_training_data_file=os.getenv("PIPELINE_FILTERED_TRAINING_DATA_FILE", "data/documents_training_data/training_data_filtered.json"),
-            final_training_data_file=os.getenv("PIPELINE_FINAL_TRAINING_DATA_FILE", "data/documents_training_data/training_data_final.jsonl"),
+            training_data_file=os.getenv("PIPELINE_TRAINING_DATA_FILE", "_data/combine/training_data.json"),
+            validation_report_file=os.getenv("PIPELINE_VALIDATION_REPORT_FILE", "_data/validate-qa/validation_report.json"),
+            filtered_training_data_file=os.getenv("PIPELINE_FILTERED_TRAINING_DATA_FILE", "_data/filter-qa/training_data_filtered.json"),
+            final_training_data_file=os.getenv("PIPELINE_FINAL_TRAINING_DATA_FILE", "_data/qa-train/training_data_final.jsonl"),
             
             chunk_size=int(os.getenv("PIPELINE_CHUNK_SIZE", "1000")),
             chunk_overlap=int(os.getenv("PIPELINE_CHUNK_OVERLAP", "200")),

@@ -41,9 +41,9 @@ class GenerateQAStep(BaseStep):
             self.log(f"Chunks directory does not exist: {chunks_dir}", "error")
             return False
         
-        chunk_files = list(chunks_dir.glob("*_chunks.json"))
+        chunk_files = list(chunks_dir.glob("*.json"))
         if not chunk_files:
-            self.log(f"No chunk files found in {chunks_dir}", "error")
+            self.log(f"No JSON files found in {chunks_dir}", "error")
             return False
         
         return True
@@ -61,9 +61,9 @@ class GenerateQAStep(BaseStep):
         
         # Get chunk files
         chunks_dir = Path(self.config.chunks_dir)
-        chunk_files = list(chunks_dir.glob("*_chunks.json"))
+        chunk_files = list(chunks_dir.glob("*.json"))
         
-        self.log(f"Found {len(chunk_files)} chunk files to process")
+        self.log(f"Found {len(chunk_files)} JSON files to process")
         
         all_qa_pairs = []
         total_processed = 0
@@ -72,7 +72,7 @@ class GenerateQAStep(BaseStep):
         for chunk_file in chunk_files:
             try:
                 # Create output file path
-                qa_file = qa_dir / f"{chunk_file.stem.replace('_chunks', '')}_qa.json"
+                qa_file = qa_dir / f"{chunk_file.stem}_qa.json"
                 
                 # Check if already processed
                 if resume and qa_file.exists():
@@ -169,22 +169,6 @@ class GenerateQAStep(BaseStep):
                 self.log(f"Error processing {chunk_file.name}: {e}", "error")
                 continue
         
-        # Create combined training data file
-        if all_qa_pairs:
-            combined_data = {
-                "metadata": {
-                    "total_qa_pairs": len(all_qa_pairs),
-                    "num_documents": total_processed,
-                    "llm_provider": self.config.llm_provider,
-                    "llm_model": self.config.llm_model,
-                    "created_at": str(datetime.now())
-                },
-                "training_pairs": all_qa_pairs
-            }
-            
-            training_data_file = Path(self.config.training_data_file)
-            save_json_atomic(combined_data, str(training_data_file))
-            self.log(f"Saved combined training data to {training_data_file}")
         
         # Summary
         self.log("=" * 50)

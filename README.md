@@ -6,7 +6,17 @@ This document describes the new, unified approach to generating training data fr
 
 ## Overview
 
-The new pipeline consolidates the entire workflow into a single CLI tool (`run.py`) that orchestrates all steps while keeping them independent for reliability and resumability.
+This pipeline provides a complete end-to-end solution for creating fine-tuned language models from documents. The unified CLI tool (`run.py`) orchestrates a 7-step process that transforms raw documents into deployable Ollama models:
+
+1. **Document Processing** → Split documents into manageable chunks
+2. **Q&A Generation** → Create question-answer pairs from content
+3. **Quality Validation** → Assess and score Q&A pair quality
+4. **Format Conversion** → Transform data for training formats
+5. **Training Preparation** → Convert Q&A pairs to training prompts
+6. **Model Fine-tuning** → Fine-tune base models with your data
+7. **Model Export** → Export trained models to Ollama format
+
+Each step can be run independently for reliability and resumability, or as part of complete pipeline workflows.
 
 ## Quick Start
 
@@ -57,84 +67,144 @@ cp config.env.example config.env
    python run.py format --template alpaca --threshold 8.0
    ```
 
-### Run Complete Pipeline
+### Run Complete Pipeline (Steps 1-4)
 
 ```bash
 python run.py pipeline --provider openai --questions-per-chunk 3 --format-threshold 8.0
 ```
 
+### Run Full Training Pipeline (Steps 1-7)
+
+```bash
+# Run the complete data preparation pipeline (steps 1-4)
+python run.py pipeline --provider openai --questions-per-chunk 3 --format-threshold 8.0
+
+# Convert Q&A pairs to training prompts (step 5)
+python run.py qa-train --verbose
+
+# Fine-tune the model (step 6)
+python run.py finetune
+
+# Export to Ollama (step 7)
+python run.py export
+```
+
+## Pipeline Steps
+
+This pipeline consists of 7 main steps that can be run individually or as a complete sequence:
+
+1. **chunk** - Split documents into manageable chunks
+2. **generate-qa** - Generate Q&A pairs from chunks
+3. **validate** - Validate Q&A quality and accuracy
+4. **format** - Format validated pairs for training
+5. **qa-train** - Convert Q&A pairs to training prompts
+6. **finetune** - Fine-tune model using training data
+7. **export** - Export fine-tuned model to Ollama
+
 ## Command Reference
 
 ### `python run.py chunk`
 
-Splits documents into manageable chunks for processing.
+**Step 1:** Splits documents into manageable chunks for processing.
 
 **Options:**
-
-- `--input-dir`: Directory containing source documents (default: `data/documents`)
-- `--output-dir`: Directory to save chunks (default: `data/document_chunks`)
-- `--chunk-size`: Size of each chunk (default: `1000`)
-- `--chunk-overlap`: Overlap between chunks (default: `200`)
-- `--resume`: Resume from existing progress
-- `--verbose`: Enable detailed output
+- `--input-dir, -i`: Directory containing source documents (overrides .env setting)
+- `--output-dir, -o`: Directory to save chunks (overrides .env setting)
+- `--chunk-size`: Size of each text chunk (overrides .env setting)
+- `--chunk-overlap`: Overlap between chunks (overrides .env setting)
+- `--resume`: Resume from existing progress (overrides .env setting)
+- `--verbose, -v`: Enable verbose output (overrides .env setting)
 
 ### `python run.py generate-qa`
 
-Creates question-answer pairs from document chunks.
+**Step 2:** Creates question-answer pairs from document chunks.
 
 **Options:**
-
-- `--input-dir`: Directory containing chunks (default: `data/document_chunks`)
-- `--output-dir`: Directory to save Q&A pairs (default: `data/document_training_data`)
-- `--provider`: LLM provider (`openai`, `claude`, `gemini`, `local`)
-- `--model`: Specific model name
-- `--questions-per-chunk`: Number of Q&A pairs per chunk (default: `3`)
-- `--temperature`: LLM temperature (default: `0.7`)
-- `--resume`: Resume from existing progress
-- `--verbose`: Enable detailed output
+- `--input-dir, -i`: Directory containing chunks (overrides .env setting)
+- `--output-dir, -o`: Directory to save Q&A pairs (overrides .env setting)
+- `--provider`: LLM provider (`openai`, `claude`, `gemini`, `local`) (overrides .env setting)
+- `--model`: Specific model name (overrides .env setting)
+- `--questions-per-chunk`: Number of Q&A pairs per chunk (overrides .env setting)
+- `--temperature`: LLM temperature (overrides .env setting)
+- `--resume`: Resume from existing progress (overrides .env setting)
+- `--verbose, -v`: Enable verbose output (overrides .env setting)
 
 ### `python run.py validate`
 
-Validates Q&A pairs for quality and accuracy. **No filtering is applied during validation** - all Q&A pairs are validated and scored. A detailed score distribution summary is provided at the end.
+**Step 3:** Validates Q&A pairs for quality and accuracy. **No filtering is applied during validation** - all Q&A pairs are validated and scored. A detailed score distribution summary is provided at the end.
 
 **Options:**
-
-- `--input`: Input training data file (default: `data/document_training_data/training_data.json`)
-- `--output`: Validation report file (default: `data/document_training_data/validation_report.json`)
-- `--provider`: LLM provider for validation
-- `--model`: Model for validation
-- `--resume`: Resume from existing progress
-- `--verbose`: Enable detailed output
-
-### `python run.py combine`
-
-Combines individual Q&A files into a single training data file.
-
-**Options:**
-
-- `--input-dir`: Directory containing Q&A files to combine (default: `_data/qa_results`)
-- `--output`: Output combined training data file (default: `_data/results/training_data.json`)
-- `--verbose`: Enable detailed output
+- `--input, -i`: Input training data JSON file (overrides .env setting)
+- `--output, -o`: Output validation report (overrides .env setting)
+- `--filtered-output`: Output filtered training data (overrides .env setting)
+- `--provider`: LLM provider for validation (overrides .env setting)
+- `--model`: Model name for validation (overrides .env setting)
+- `--threshold`: Pass/fail threshold (overrides .env setting)
+- `--filter-threshold`: Filtering threshold (overrides .env setting)
+- `--resume`: Resume from existing progress (overrides .env setting)
+- `--verbose, -v`: Enable verbose output (overrides .env setting)
 
 ### `python run.py format`
 
-Formats validated Q&A pairs for model training. **Threshold filtering is applied during formatting** - you can specify a quality threshold to filter out low-quality Q&A pairs.
+**Step 4:** Formats validated Q&A pairs for model training. **Threshold filtering is applied during formatting** - you can specify a quality threshold to filter out low-quality Q&A pairs.
 
 **Options:**
+- `--input, -i`: Input validation report (overrides .env setting)
+- `--output, -o`: Output formatted training data (overrides .env setting)
+- `--template`: Training format template (`alpaca`, `chatml`, etc.) (overrides .env setting)
+- `--threshold`: Quality threshold for filtering (0.0 = no filtering) (overrides .env setting)
+- `--verbose, -v`: Enable verbose output (overrides .env setting)
 
-- `--input`: Input validation report file (default: `data/document_training_data/validation_report.json`)
-- `--output`: Final training data file (default: `data/document_training_data/training_data_final.jsonl`)
-- `--template`: Training format template (default: `alpaca`)
-- `--threshold`: Quality threshold for filtering (0.0 = no filtering, default: `0.0`)
-- `--verbose`: Enable detailed output
+### `python run.py qa-train`
+
+**Step 5:** Converts validated Q&A pairs to model-specific training prompts.
+
+**Options:**
+- `--verbose, -v`: Enable verbose output
+
+**Environment Variables Required:**
+- Uses configuration from `.env` file for input/output paths and model type
+
+### `python run.py finetune`
+
+**Step 6:** Fine-tunes base model using training prompts.
+
+**Environment Variables Required:**
+- `FINETUNE_MODEL_NAME`: Name of the base model to fine-tune
+- `FINETUNE_MODEL_TYPE`: Type of model (optional)
+- `FINETUNE_OUTPUT_DIR`: Directory to save fine-tuned model (optional)
+
+### `python run.py export`
+
+**Step 7:** Exports fine-tuned LoRA model to Ollama format.
+
+**Environment Variables Required:**
+- `EXPORT_MODEL_PATH`: Path to the fine-tuned model
+- `EXPORT_MODEL_NAME`: Name for the exported Ollama model
+- `EXPORT_OUTPUT_DIR`: Output directory (default: `./merged_models`)
+
+### `python run.py combine`
+
+**Utility:** Combines individual Q&A files into a single training data file.
+
+**Options:**
+- `--input-dir, -i`: Directory containing Q&A files to combine (default: `_data/qa_results`)
+- `--output, -o`: Output combined training data file (default: `_data/results/training_data.json`)
+- `--verbose, -v`: Enable verbose output
 
 ### `python run.py pipeline`
 
-Runs the complete pipeline in sequence.
+**Complete Pipeline:** Runs steps 1-4 in sequence (chunk → generate-qa → validate → format).
 
-**Options:** Combines options from all individual steps, plus:
-
-- `--format-threshold`: Quality threshold for formatting (0.0 = no filtering)
+**Options:** Combines options from individual steps:
+- `--input-dir`: Directory containing source documents (overrides .env setting)
+- `--chunk-size`: Size of each text chunk (overrides .env setting)
+- `--provider`: LLM provider (overrides .env setting)
+- `--questions-per-chunk`: Number of Q&A pairs per chunk (overrides .env setting)
+- `--validation-threshold`: Quality threshold for validation (overrides .env setting)
+- `--format-threshold`: Quality threshold for formatting (0.0 = no filtering) (overrides .env setting)
+- `--resume`: Resume from existing progress (overrides .env setting)
+- `--verbose, -v`: Enable verbose output (overrides .env setting)
 
 ## File Structure
 
@@ -162,13 +232,16 @@ run.py                          # Main CLI entry point
 
 ## Benefits
 
-1. **Single Entry Point**: One `run.py` command for everything
-2. **Independent Steps**: Each step can be run separately for robustness
-3. **Resume Capability**: Failed steps can be resumed without starting over
-4. **Consistent Interface**: Same command structure for all operations
-5. **Simplified Project**: Fewer directories and scripts to manage
-6. **Flexible Filtering**: Validate once, format with different thresholds
-7. **Transparent Quality**: Complete score distribution to understand data quality
+1. **Complete End-to-End Pipeline**: From raw documents to deployable Ollama models
+2. **Single Entry Point**: One `run.py` command for all operations
+3. **Independent Steps**: Each step can be run separately for robustness and debugging
+4. **Resume Capability**: Failed steps can be resumed without starting over
+5. **Consistent Interface**: Same command structure for all operations
+6. **Simplified Project**: Fewer directories and scripts to manage
+7. **Flexible Filtering**: Validate once, format with different thresholds
+8. **Transparent Quality**: Complete score distribution to understand data quality
+9. **Model Agnostic**: Support for OpenAI, Claude, Gemini, and local models
+10. **Production Ready**: Includes fine-tuning and model export capabilities
 
 ## Migration from Old Structure
 
@@ -196,22 +269,66 @@ PIPELINE_QUESTIONS_PER_CHUNK=3
 # Validation settings
 PIPELINE_VALIDATION_THRESHOLD=8.0
 PIPELINE_FILTER_THRESHOLD=7.0  # Deprecated - use format threshold instead
+
+# Fine-tuning settings (for steps 5-7)
+FINETUNE_MODEL_NAME=microsoft/DialoGPT-medium
+FINETUNE_MODEL_TYPE=mistral
+FINETUNE_OUTPUT_DIR=./fine_tuned_models
+
+# Export settings (for step 7)
+EXPORT_MODEL_PATH=./fine_tuned_models/adapter_model
+EXPORT_MODEL_NAME=my-custom-model
+EXPORT_OUTPUT_DIR=./merged_models
 ```
 
 ## Examples
 
-### Basic workflow
+### Basic Data Preparation Workflow (Steps 1-4)
 
 ```bash
-# Step by step
+# Step by step approach
 python run.py chunk --verbose
 python run.py generate-qa --provider openai --questions-per-chunk 5
 python run.py combine --verbose  # Optional: if you have separate Q&A files
 python run.py validate --verbose --resume
 python run.py format --template alpaca --threshold 8.0
 
-# Or all at once
+# Or run data preparation pipeline all at once
 python run.py pipeline --provider openai --questions-per-chunk 5 --format-threshold 8.0 --verbose
+```
+
+### Complete Training Workflow (Steps 1-7)
+
+```bash
+# Data preparation (steps 1-4)
+python run.py pipeline --provider openai --questions-per-chunk 5 --format-threshold 8.0 --verbose
+
+# Training preparation and execution (steps 5-7)
+python run.py qa-train --verbose
+python run.py finetune
+python run.py export
+
+# Or run each step individually for more control:
+# Step 1: Chunk documents
+python run.py chunk --input-dir ./my_docs --chunk-size 1500 --verbose
+
+# Step 2: Generate Q&A pairs
+python run.py generate-qa --provider openai --model gpt-4 --questions-per-chunk 3 --verbose
+
+# Step 3: Validate quality
+python run.py validate --provider openai --model gpt-4 --verbose --resume
+
+# Step 4: Format for training
+python run.py format --template alpaca --threshold 8.0 --verbose
+
+# Step 5: Convert to training prompts
+python run.py qa-train --verbose
+
+# Step 6: Fine-tune model
+python run.py finetune
+
+# Step 7: Export to Ollama
+python run.py export
 ```
 
 ### Resume interrupted work
