@@ -17,7 +17,7 @@ import subprocess
 import tempfile
 import shutil
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List
 
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
@@ -180,6 +180,142 @@ def fix_chat_template_for_ollama(template: str) -> str:
     return ollama_template
 
 
+def detect_model_type(merged_model_path: str) -> str:
+    """
+    Detect the model type from the model config or path.
+    
+    Args:
+        merged_model_path: Path to the merged model directory
+        
+    Returns:
+        Model type string (llama, gemma, qwen, or alpaca)
+    """
+    import json
+    
+    # Try to detect from config.json
+    config_file = os.path.join(merged_model_path, "config.json")
+    if os.path.exists(config_file):
+        try:
+            with open(config_file, 'r') as f:
+                config = json.load(f)
+            
+            model_name = config.get("_name_or_path", "").lower()
+            architectures = config.get("architectures", [])
+            
+            # Check architectures first
+            for arch in architectures:
+                arch_lower = arch.lower()
+                if "llama" in arch_lower:
+                    return "llama"
+                elif "gemma" in arch_lower:
+                    return "gemma"
+                elif "qwen" in arch_lower:
+                    return "qwen"
+            
+            # Check model name
+            if "llama" in model_name:
+                return "llama"
+            elif "gemma" in model_name:
+                return "gemma"
+            elif "qwen" in model_name:
+                return "qwen"
+                
+        except Exception as e:
+            print(f"Warning: Could not read config.json: {e}")
+    
+    # Fallback to path-based detection
+    path_lower = merged_model_path.lower()
+    if "llama" in path_lower:
+        return "llama"
+    elif "gemma" in path_lower:
+        return "gemma"
+    elif "qwen" in path_lower:
+        return "qwen"
+    
+    # Default fallback
+    print("Warning: Could not detect model type, defaulting to 'llama'")
+    return "llama"
+
+
+def get_model_specific_ollama_template(model_type: str) -> str:
+    """
+    Get Ollama template that matches the training format for each model type.
+    
+    Args:
+        model_type: Model type (llama, gemma, qwen, alpaca)
+        
+    Returns:
+        Ollama-compatible template string
+    """
+    templates = {
+        "llama": """{{- if .Messages }}
+{{- range .Messages }}
+{{- if eq .Role "system" }}<|begin_of_text|><|start_header_id|>system<|end_header_id|>
+
+{{ .Content }}<|eot_id|>{{- else if eq .Role "user" }}<|start_header_id|>user<|end_header_id|>
+
+{{ .Content }}<|eot_id|>{{- else if eq .Role "assistant" }}<|start_header_id|>assistant<|end_header_id|>
+
+{{ .Content }}<|eot_id|>{{- end }}
+{{- end }}
+{{- else }}<|begin_of_text|><|start_header_id|>user<|end_header_id|>
+
+{{ .Prompt }}<|eot_id|>{{- end }}<|start_header_id|>assistant<|end_header_id|>
+
+""",
+        
+        "gemma": """{{- if .Messages }}
+{{- range .Messages }}
+{{- if eq .Role "user" }}<start_of_turn>user
+{{ .Content }}<end_of_turn>
+{{- else if eq .Role "assistant" }}<start_of_turn>model
+{{ .Content }}<end_of_turn>
+{{- else if eq .Role "system" }}{{ .Content }}
+
+{{- end }}
+{{- end }}
+{{- else }}<start_of_turn>user
+{{ .Prompt }}<end_of_turn>
+{{- end }}<start_of_turn>model
+""",
+        
+        "qwen": """{{- if .Messages }}
+{{- range .Messages }}
+{{- if eq .Role "system" }}<|im_start|>system
+{{ .Content }}<|im_end|>
+{{- else if eq .Role "user" }}<|im_start|>user
+{{ .Content }}<|im_end|>
+{{- else if eq .Role "assistant" }}<|im_start|>assistant
+{{ .Content }}<|im_end|>
+{{- end }}
+{{- end }}
+{{- else }}<|im_start|>user
+{{ .Prompt }}<|im_end|>
+{{- end }}<|im_start|>assistant
+""",
+        
+        "alpaca": """{{- if .Messages }}
+{{- range .Messages }}
+{{- if eq .Role "system" }}{{ .Content }}
+
+{{- else if eq .Role "user" }}### Instruction:
+{{ .Content }}
+
+{{- else if eq .Role "assistant" }}### Response:
+{{ .Content }}
+
+{{- end }}
+{{- end }}
+{{- else }}### Instruction:
+{{ .Prompt }}
+
+{{- end }}### Response:
+"""
+    }
+    
+    return templates.get(model_type, templates["llama"])
+
+
 def create_modelfile(model_name: str, merged_model_path: str, chat_template: Optional[str] = None, 
                     system_prompt: Optional[str] = None, job_id: Optional[str] = None) -> str:
     """
@@ -226,24 +362,22 @@ def create_modelfile(model_name: str, merged_model_path: str, chat_template: Opt
         except Exception:
             final_system_prompt = get_default_system_prompt()
     
-    # Use a basic chat template if none provided, or fix the provided template
+    # Detect model type and use appropriate template
+    model_type = detect_model_type(merged_model_path)
+    print(f"Detected model type: {model_type}")
+    
+    # Use model-specific template if none provided, or fix the provided template
     if not chat_template:
-        chat_template = """{{- if .Messages }}
-{{- range .Messages }}
-{{- if eq .Role "system" }}System: {{ .Content }}
-
-{{- else if eq .Role "user" }}Human: {{ .Content }}
-
-{{- else if eq .Role "assistant" }}Assistant: {{ .Content }}
-
-{{- end }}
-{{- end }}
-{{- else }}Human: {{ .Prompt }}
-
-{{- end }}Assistant: """
+        chat_template = get_model_specific_ollama_template(model_type)
+        print(f"Using {model_type}-specific template for Ollama")
     else:
         # Fix HuggingFace template for Ollama compatibility
         chat_template = fix_chat_template_for_ollama(chat_template)
+        print("Using provided chat template (converted for Ollama)")
+    
+    # Get model-specific stop tokens
+    stop_tokens = get_model_stop_tokens(model_type)
+    stop_parameters = "\n".join([f'PARAMETER stop "{token}"' for token in stop_tokens])
     
     modelfile_content = f'''FROM {abs_model_path}
 
@@ -255,11 +389,30 @@ PARAMETER temperature 0.7
 PARAMETER top_p 0.9
 PARAMETER top_k 40
 PARAMETER num_ctx 4096
-PARAMETER stop "Human:"
-PARAMETER stop "System:"
+{stop_parameters}
 '''
     
     return modelfile_content
+
+
+def get_model_stop_tokens(model_type: str) -> List[str]:
+    """
+    Get model-specific stop tokens for generation.
+    
+    Args:
+        model_type: Model type (llama, gemma, qwen, alpaca)
+        
+    Returns:
+        List of stop tokens
+    """
+    stop_tokens_map = {
+        "llama": ["<|eot_id|>", "<|end_of_text|>"],
+        "gemma": ["<end_of_turn>", "<start_of_turn>"],
+        "qwen": ["<|im_end|>", "<|endoftext|>"],
+        "alpaca": ["### Instruction:", "### Response:"]
+    }
+    
+    return stop_tokens_map.get(model_type, ["<|eot_id|>", "<|end_of_text|>"])
 
 
 def get_default_system_prompt() -> str:

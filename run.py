@@ -240,6 +240,51 @@ def qa_to_training(
 def finetune_model():
     """
     Step 6: Fine-tune base model using training prompts.
+    
+    Required Environment Variables:
+        FINETUNE_MODEL_NAME: Base model name (e.g., meta-llama/Llama-3.2-1B-Instruct)
+    
+    Optional Environment Variables:
+        FINETUNE_MODEL_TYPE: Model type (llama, gemma, qwen) - auto-detected if not set
+        HF_TOKEN: HuggingFace token for accessing gated models
+        
+        # Training Configuration
+        NUM_TRAIN_EPOCHS: Number of training epochs (default: 3)
+        OPTIMIZER: Optimizer type (default: paged_adamw_8bit)
+        SAVE_STEPS: Save checkpoint every N steps (default: 25)
+        LOGGING_STEPS: Log every N steps (default: 5)
+        MAX_GRAD_NORM: Max gradient norm for clipping (model-specific default)
+        SAVE_TOTAL_LIMIT: Max number of checkpoints to keep (default: 3)
+        
+        # Precision & Performance
+        USE_FP16: Use 16-bit precision (default: false)
+        USE_BF16: Use bfloat16 precision (default: true)
+        GROUP_BY_LENGTH: Group by sequence length (default: true)
+        LR_SCHEDULER_TYPE: Learning rate scheduler (default: cosine)
+        GRADIENT_CHECKPOINTING: Use gradient checkpointing (default: true)
+        DATALOADER_PIN_MEMORY: Pin memory for dataloader (default: false)
+        REMOVE_UNUSED_COLUMNS: Remove unused columns (default: true)
+        DISABLE_WANDB: Disable Weights & Biases logging (default: true)
+        
+        # Testing
+        TEST_MODEL_AFTER_TRAINING: Test model after training (default: false)
+        TEST_MAX_NEW_TOKENS: Max tokens for test generation (default: 200)
+        TEST_TEMPERATURE: Temperature for test generation (default: 0.7)
+        TEST_TOP_P: Top-p for test generation (default: 0.9)
+        DEVICE_MAP: Device mapping strategy (default: auto)
+        TRUST_REMOTE_CODE: Trust remote code in models (default: true)
+    
+    Examples:
+        # Basic fine-tuning with Llama
+        export FINETUNE_MODEL_NAME="meta-llama/Llama-3.2-1B-Instruct"
+        python run.py finetune
+        
+        # Fine-tuning with custom settings
+        export FINETUNE_MODEL_NAME="google/gemma-2-2b-it"
+        export FINETUNE_MODEL_TYPE="gemma"
+        export NUM_TRAIN_EPOCHS="5"
+        export TEST_MODEL_AFTER_TRAINING="true"
+        python run.py finetune
     """
     config = PipelineConfig.from_env()
     step = FinetuneStep(config)
@@ -254,6 +299,66 @@ def finetune_model():
 def export_model():
     """
     Step 7: Export fine-tuned LoRA model to Ollama format.
+    
+    Required Environment Variables:
+        EXPORT_MODEL_PATH: Path to the fine-tuned LoRA adapter directory
+        EXPORT_MODEL_NAME: Name for the exported Ollama model
+    
+    Optional Environment Variables:
+        EXPORT_OUTPUT_DIR: Output directory for merged model (default: _data/export)
+        EXPORT_SYSTEM_PROMPT: Custom system prompt for the model
+        EXPORT_JOB_ID: Job ID to load system prompt from job config
+        EXPORT_SKIP_MERGE: Skip model merging, use existing merged model (default: false)
+        
+        # Ollama Creation Settings
+        OLLAMA_CREATE_TIMEOUT_MINUTES: Timeout for ollama create command (default: 20)
+        OLLAMA_SHOW_REALTIME_OUTPUT: Show real-time ollama output (default: false)
+        
+        # HuggingFace Settings
+        HF_TOKEN: HuggingFace token for accessing gated models
+    
+    Process Overview:
+        1. Load LoRA adapter and base model
+        2. Merge LoRA weights with base model
+        3. Save merged model to disk
+        4. Create Ollama Modelfile with appropriate template
+        5. Run 'ollama create' to register the model
+    
+    Model Type Detection:
+        - Automatically detects model type (llama, gemma, qwen) from config.json
+        - Uses appropriate chat template and stop tokens for each model type
+        - Falls back to llama format if detection fails
+    
+    Examples:
+        # Basic export
+        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
+        export EXPORT_MODEL_NAME="my-custom-model"
+        python run.py export
+        
+        # Export with custom system prompt
+        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
+        export EXPORT_MODEL_NAME="policy-bot"
+        export EXPORT_SYSTEM_PROMPT="You are a helpful policy assistant."
+        python run.py export
+        
+        # Export with debugging (see ollama create progress)
+        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
+        export EXPORT_MODEL_NAME="debug-model"
+        export OLLAMA_SHOW_REALTIME_OUTPUT="true"
+        export OLLAMA_CREATE_TIMEOUT_MINUTES="30"
+        python run.py export
+        
+        # Skip merge step (if model already merged)
+        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
+        export EXPORT_MODEL_NAME="existing-model"
+        export EXPORT_SKIP_MERGE="true"
+        python run.py export
+    
+    Troubleshooting:
+        - If command hangs, set OLLAMA_SHOW_REALTIME_OUTPUT=true
+        - For large models, increase OLLAMA_CREATE_TIMEOUT_MINUTES
+        - Ensure Ollama server is running and accessible
+        - Check that EXPORT_MODEL_PATH contains valid LoRA adapter files
     """
     config = PipelineConfig.from_env()
     step = ExportStep(config)
@@ -276,7 +381,7 @@ def run_full_pipeline(
     verbose: bool = typer.Option(None, "--verbose", "-v", help="Enable verbose output. Overrides .env setting.")
 ):
     """
-    Run the complete pipeline: chunk -> generate-qa -> validate-qa -> filter-qa.
+    Steps 1-4: Run the complete data preparation pipeline (chunk -> generate-qa -> validate-qa -> filter-qa).
     
     Executes all steps in sequence with consistent configuration.
     If any step fails, the pipeline stops and reports the error.

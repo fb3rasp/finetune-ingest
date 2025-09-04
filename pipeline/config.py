@@ -20,7 +20,6 @@ class PipelineConfig:
     filter_qa_dir: str = "_data/filter-qa"
     combine_dir: str = "_data/combine"
     qa_train_dir: str = "_data/qa-train"
-    finetune_dir: str = "_data/finetune"
     training_model_dir: str = "_data/finetune-model"
     export_dir: str = "_data/export"
     
@@ -58,11 +57,9 @@ class PipelineConfig:
     batch_size: int = 10
     
     def __post_init__(self):
-        """Ensure all directories exist."""
-        for dir_path in [self.chunks_dir, self.qa_dir, self.validate_qa_dir, 
-                        self.filter_qa_dir, self.combine_dir, self.qa_train_dir,
-                        self.finetune_dir, self.training_model_dir, self.export_dir]:
-            Path(dir_path).mkdir(parents=True, exist_ok=True)
+        """Configuration post-initialization."""
+        # Note: Directories are created on-demand by individual steps when needed
+        pass
     
     @classmethod
     def from_env(cls) -> "PipelineConfig":
@@ -75,7 +72,6 @@ class PipelineConfig:
             filter_qa_dir=os.getenv("PIPELINE_FILTER_QA_DIR", "_data/filter-qa"),
             combine_dir=os.getenv("PIPELINE_COMBINE_DIR", "_data/combine"),
             qa_train_dir=os.getenv("PIPELINE_QA_TRAIN_DIR", "_data/qa-train"),
-            finetune_dir=os.getenv("PIPELINE_FINETUNE_DIR", "_data/finetune"),
             training_model_dir=os.getenv("PIPELINE_TRAINING_MODEL_DIR", "_data/finetune-model"),
             export_dir=os.getenv("PIPELINE_EXPORT_DIR", "_data/export"),
             
