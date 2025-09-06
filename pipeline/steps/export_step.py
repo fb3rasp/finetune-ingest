@@ -191,7 +191,7 @@ class ExportStep(BaseStep):
 
     def get_default_system_prompt(self) -> str:
         """Get default system prompt for models without specific prompts"""
-        return """You are a helpful assistant specialized in Land Information New Zealand (LINZ) title fee policies. You provide accurate, clear information about title fees, registration processes, and related policies. Always base your responses on official LINZ policies and be precise with fee amounts and procedures."""
+        return self.config.export_system_prompt
 
     def merge_lora_model(self, adapter_path: str, output_path: str) -> bool:
         """
@@ -436,45 +436,56 @@ PARAMETER num_ctx 4096
             return False
 
     def check_prerequisites(self) -> bool:
-        """Check if export prerequisites are met."""
+        """Check if basic ML libraries are available."""
         if not ML_LIBRARIES_AVAILABLE:
             self.log(f"Required ML libraries not available: {IMPORT_ERROR}", "error")
             return False
+        return True
 
-        adapter_path = os.getenv("EXPORT_MODEL_PATH", "")
-        if not adapter_path or not Path(adapter_path).exists():
-            self.log(f"Export model path does not exist: {adapter_path}", "error")
+    def check_export_prerequisites(self, model_path: str, model_name: Optional[str]) -> bool:
+        """Check if export prerequisites are met."""
+        if not self.check_prerequisites():
+            return False
+
+        if not model_path or not Path(model_path).exists():
+            self.log(f"Export model path does not exist: {model_path}", "error")
             return False
             
-        if not os.getenv("EXPORT_MODEL_NAME"):
-            self.log("EXPORT_MODEL_NAME environment variable not set", "error")
+        if not model_name:
+            self.log("Model name not provided. Use --model-name argument, EXPORT_MODEL_NAME environment variable, or config file", "error")
             return False
             
         return True
 
-    def run(self, **kwargs) -> bool:
+    def run(self, model_name: Optional[str] = None, system_prompt: Optional[str] = None, **kwargs) -> bool:
         """Run the model export step."""
         self.log("Starting model export step...")
         
-        if not self.check_prerequisites():
+        # Get configuration
+        model_path = os.getenv("EXPORT_MODEL_PATH")
+        output_dir = os.getenv("EXPORT_OUTPUT_DIR", self.config.export_dir)
+        
+        # Priority for model name: CLI argument > environment variable > config default
+        final_model_name = model_name or os.getenv("EXPORT_MODEL_NAME") or self.config.export_model_name
+        
+        # Priority for system prompt: CLI argument > environment variable > config default
+        final_system_prompt = system_prompt or os.getenv("EXPORT_SYSTEM_PROMPT")
+        job_id = os.getenv("EXPORT_JOB_ID")
+        skip_merge = os.getenv("EXPORT_SKIP_MERGE", "false").lower() == "true"
+        
+        # Check prerequisites after we have all the configuration
+        if not self.check_export_prerequisites(model_path, final_model_name):
             return False
         
         try:
-            # Get configuration
-            model_path = os.getenv("EXPORT_MODEL_PATH")
-            model_name = os.getenv("EXPORT_MODEL_NAME")
-            output_dir = os.getenv("EXPORT_OUTPUT_DIR", self.config.export_dir)
-            system_prompt = os.getenv("EXPORT_SYSTEM_PROMPT")
-            job_id = os.getenv("EXPORT_JOB_ID")
-            skip_merge = os.getenv("EXPORT_SKIP_MERGE", "false").lower() == "true"
             
             # Ensure output directory exists
             Path(output_dir).mkdir(parents=True, exist_ok=True)
             
             # Set up paths
-            merged_model_path = os.path.join(output_dir, f"{model_name}_merged")
+            merged_model_path = os.path.join(output_dir, f"{final_model_name}_merged")
             
-            self.log(f"🚀 Starting export process for: {model_name}")
+            self.log(f"🚀 Starting export process for: {final_model_name}")
             self.log(f"Adapter path: {model_path}")
             self.log(f"Merged model path: {merged_model_path}")
             
@@ -500,16 +511,16 @@ PARAMETER num_ctx 4096
                 
                 # Create Modelfile
                 modelfile_content = self.create_modelfile(
-                    model_name, 
+                    final_model_name, 
                     merged_model_path, 
-                    system_prompt=system_prompt,
+                    system_prompt=final_system_prompt,
                     job_id=job_id
                 )
                 
                 # Create Ollama model
-                if self.create_ollama_model(model_name, modelfile_content, temp_dir):
+                if self.create_ollama_model(final_model_name, modelfile_content, temp_dir):
                     self.log(f"🎉 Export completed successfully!")
-                    self.log(f"Your fine-tuned model is now available in Ollama as: {model_name}")
+                    self.log(f"Your fine-tuned model is now available in Ollama as: {final_model_name}")
                     return True
                 else:
                     return False

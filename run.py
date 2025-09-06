@@ -296,17 +296,20 @@ def finetune_model():
         raise typer.Exit(1)
 
 @app.command("export")
-def export_model():
+def export_model(
+    model_name: str = typer.Option(None, "--model-name", help="Name for the exported Ollama model. Overrides .env setting."),
+    system_prompt: str = typer.Option(None, "--system-prompt", help="Custom system prompt for the exported model. Overrides .env setting.")
+):
     """
     Step 7: Export fine-tuned LoRA model to Ollama format.
     
     Required Environment Variables:
         EXPORT_MODEL_PATH: Path to the fine-tuned LoRA adapter directory
-        EXPORT_MODEL_NAME: Name for the exported Ollama model
+        EXPORT_MODEL_NAME: Name for the exported Ollama model (can be overridden by --model-name)
     
     Optional Environment Variables:
         EXPORT_OUTPUT_DIR: Output directory for merged model (default: _data/export)
-        EXPORT_SYSTEM_PROMPT: Custom system prompt for the model
+        EXPORT_SYSTEM_PROMPT: Custom system prompt for the model (can be overridden by --system-prompt)
         EXPORT_JOB_ID: Job ID to load system prompt from job config
         EXPORT_SKIP_MERGE: Skip model merging, use existing merged model (default: false)
         
@@ -362,7 +365,7 @@ def export_model():
     """
     config = PipelineConfig.from_env()
     step = ExportStep(config)
-    success = step.run()
+    success = step.run(model_name=model_name, system_prompt=system_prompt)
     if success:
         typer.echo("✅ Model export completed successfully!")
     else:

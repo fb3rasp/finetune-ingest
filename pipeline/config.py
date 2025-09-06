@@ -52,6 +52,10 @@ class PipelineConfig:
     # Training format
     training_template: str = "alpaca"
     
+    # Export settings
+    export_model_name: Optional[str] = None
+    export_system_prompt: Optional[str] = "You are a helpful assistant specialized in AWS AppStream 2.0 and Well-Architected Framework principles. You provide accurate, clear information based on AWS documentation and best practices."
+    
     # General settings
     verbose: bool = False
     batch_size: int = 10
@@ -99,6 +103,8 @@ class PipelineConfig:
             validator_reasoning=os.getenv("PIPELINE_VALIDATOR_REASONING", "false").lower() in ("true", "1", "yes"),
             
             training_template=os.getenv("PIPELINE_TRAINING_TEMPLATE", "alpaca"),
+            export_model_name=os.getenv("EXPORT_MODEL_NAME"),
+            export_system_prompt=os.getenv("EXPORT_SYSTEM_PROMPT", "You are a helpful assistant specialized in AWS AppStream 2.0 and Well-Architected Framework principles. You provide accurate, clear information based on AWS documentation and best practices."),
             verbose=os.getenv("PIPELINE_VERBOSE", "false").lower() in ("true", "1", "yes"),
             batch_size=int(os.getenv("PIPELINE_BATCH_SIZE", "10")),
         )
