@@ -22,21 +22,16 @@ class QATrainingStep(BaseStep):
     """Step 5: Convert validated Q&A pairs to training prompts."""
 
     def check_prerequisites(self) -> bool:
-        """Check if filtered Q&A files exist."""
-        filter_dir = Path(self.config.filter_qa_dir)
-        if not filter_dir.exists():
-            self.log(f"Filter directory does not exist: {filter_dir}", "error")
-            return False
-        
-        filtered_files = list(filter_dir.glob("*.json"))
-        if not filtered_files:
-            self.log(f"No filtered JSON files found in {filter_dir}", "error")
+        """Check if combined Q&A file exists."""
+        combined_file = Path(self.config.qa_combine_dir) / self.config.qa_combine_filename
+        if not combined_file.exists():
+            self.log(f"Combined Q&A file does not exist: {combined_file}", "error")
             return False
         
         return True
 
     def run(self, **kwargs) -> bool:
-        """Convert filtered Q&A files to training prompts."""
+        """Convert combined Q&A file to training prompts."""
         self.log("Starting QA to training prompts conversion step...")
         
         if not self.check_prerequisites():
@@ -46,94 +41,73 @@ class QATrainingStep(BaseStep):
         train_dir = Path(self.config.qa_train_dir)
         train_dir.mkdir(parents=True, exist_ok=True)
         
-        # Get filtered files
-        filter_dir = Path(self.config.filter_qa_dir)
-        filtered_files = list(filter_dir.glob("*.json"))
+        # Get combined file
+        combined_file = Path(self.config.qa_combine_dir) / self.config.qa_combine_filename
         
-        self.log(f"Found {len(filtered_files)} filtered files to process")
+        self.log(f"Processing combined file: {combined_file}")
         
         # Initialize prompt adapter
         adapter = PromptAdapter()
         
-        total_processed = 0
-        total_training_prompts = 0
-        all_training_prompts = []
-        
-        for filtered_file in filtered_files:
-            try:
-                # Create output file path
-                output_file = train_dir / f"{filtered_file.stem}_training.jsonl"
+        try:
+            # Load combined data
+            combined_data = load_json_if_exists(str(combined_file))
+            if not combined_data:
+                self.log(f"Could not load combined data from {combined_file}", "error")
+                return False
+            
+            # Get training pairs from combined file
+            qa_pairs = combined_data.get('training_pairs', [])
+            if not qa_pairs:
+                self.log(f"No training pairs found in {combined_file}", "error")
+                return False
+            
+            self.log(f"Found {len(qa_pairs)} Q&A pairs to convert")
+            
+            # Convert Q&A pairs to training prompts
+            all_training_prompts = []
+            for pair in qa_pairs:
+                question = pair.get('question', '')
+                answer = pair.get('answer', '')
                 
-                # Log processing
-                self.log(f"Processing: {filtered_file.name}")
-                
-                # Load filtered data
-                filtered_data = load_json_if_exists(str(filtered_file))
-                if not filtered_data:
-                    self.log(f"Could not load filtered data from {filtered_file.name}", "warning")
-                    continue
-                
-                qa_pairs = filtered_data.get('filtered_pairs', [])
-                if not qa_pairs:
-                    self.log(f"No filtered pairs found in {filtered_file.name}", "warning")
-                    continue
-                
-                # Convert Q&A pairs to training prompts
-                training_prompts = []
-                for pair in qa_pairs:
-                    question = pair.get('question', '')
-                    answer = pair.get('answer', '')
+                if question and answer:
+                    # Create training prompt using adapter
+                    prompt = adapter.create_training_prompt(
+                        instruction=question,
+                        response=answer,
+                        system_prompt="You are a helpful assistant that answers questions accurately and concisely.",
+                        model_type=self.config.training_template
+                    )
                     
-                    if question and answer:
-                        # Create training prompt using adapter
-                        prompt = adapter.create_training_prompt(
-                            instruction=question,
-                            response=answer,
-                            system_prompt="You are a helpful assistant that answers questions accurately and concisely.",
-                            model_type=self.config.training_template
-                        )
-                        
-                        training_prompts.append({
-                            'text': prompt,
-                            'question': question,
-                            'answer': answer,
-                            'source_file': pair.get('source_file'),
-                            'validation_score': pair.get('validation_score')
-                        })
-                
-                # Save individual training file as JSONL
-                with open(output_file, 'w', encoding='utf-8') as f:
-                    for prompt in training_prompts:
-                        f.write(json.dumps(prompt, ensure_ascii=False) + '\n')
-                
-                # Add to collection for combined file
-                all_training_prompts.extend(training_prompts)
-                
-                total_processed += 1
-                total_training_prompts += len(training_prompts)
-                self.log(f"Completed {filtered_file.name}: {len(training_prompts)} training prompts")
-                self.log(f"Training prompts saved to: {output_file}")
-                
-            except Exception as e:
-                self.log(f"Error processing {filtered_file.name}: {e}", "error")
-                continue
-        
-        # Create combined final training file
-        if all_training_prompts:
-            final_output = Path(self.config.final_training_data_file)
+                    all_training_prompts.append({
+                        'text': prompt,
+                        'question': question,
+                        'answer': answer,
+                        'source_file': pair.get('source_file'),
+                        'validation_score': pair.get('validation_score')
+                    })
+            
+            total_training_prompts = len(all_training_prompts)
+            
+            # Create final training file in the configured qa_train_dir
+            final_output = Path(self.config.qa_train_dir) / "training_data_final.jsonl"
             final_output.parent.mkdir(parents=True, exist_ok=True)
             
             with open(final_output, 'w', encoding='utf-8') as f:
                 for prompt in all_training_prompts:
                     f.write(json.dumps(prompt, ensure_ascii=False) + '\n')
             
-            self.log(f"Combined training data saved to: {final_output}")
+            self.log(f"Training data saved to: {final_output}")
+            
+            # Summary
+            self.log("=" * 50)
+            self.log("Training Conversion Summary:")
+            self.log(f"Combined file processed: {combined_file.name}")
+            self.log(f"Total training prompts: {total_training_prompts}")
+            self.log(f"Template used: {self.config.training_template}")
+            
+            return True
         
-        # Summary
-        self.log("=" * 50)
-        self.log("Training Conversion Summary:")
-        self.log(f"Files processed: {total_processed}")
-        self.log(f"Total training prompts: {total_training_prompts}")
-        self.log(f"Template used: {self.config.training_template}")
-        
-        return total_processed > 0
+        except Exception as e:
+            self.log(f"Error processing combined file: {e}", "error")
+            return False

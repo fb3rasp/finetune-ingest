@@ -120,45 +120,119 @@ class JSONOutputParser(BaseLLMOutputParser):
             # Handle response content from LangChain message objects
             if hasattr(text, 'content'):
                 text = text.content
-            text = str(text).strip()
+            
+            # Convert to string and handle the specific format from the logs
+            text_str = str(text).strip()
+            
+            # Handle the specific case where the response is wrapped with content='...'
+            import re
+            
+            # Multiple patterns to extract content from different wrapper formats
+            content_patterns = [
+                # Pattern 1: content='...' additional_kwargs=...
+                r"content='(.*?)'\s+additional_kwargs",
+                # Pattern 2: content="..." additional_kwargs=...
+                r'content="(.*?)"\s+additional_kwargs',
+                # Pattern 3: content='...' followed by end of string
+                r"content='(.*?)'(?:\s*$)",
+                # Pattern 4: content="..." followed by end of string
+                r'content="(.*?)"(?:\s*$)',
+            ]
+            
+            extracted_content = None
+            for pattern in content_patterns:
+                match = re.search(pattern, text_str, re.DOTALL)
+                if match:
+                    extracted_content = match.group(1)
+                    # Unescape escaped quotes - handle both single and double quotes
+                    extracted_content = extracted_content.replace("\\'", "'").replace('\\"', '"')
+                    break
+            
+            if extracted_content:
+                text_str = extracted_content
             
             # Remove common unwanted content that models add despite instructions
             # Remove <think> tags and their content
-            import re
-            text = re.sub(r'<think>.*?</think>', '', text, flags=re.DOTALL)
+            text_str = re.sub(r'<think>.*?</think>', '', text_str, flags=re.DOTALL)
+            text_str = text_str.strip()
             
-            # Remove any leading/trailing explanatory text before/after JSON
-            # Look for the JSON array more aggressively
-            start_idx = text.find('[')
-            end_idx = text.rfind(']') + 1
+            # Try to extract JSON - handle both array format and object with qa_pairs format
+            json_text = None
+            qa_pairs = None
             
-            if start_idx == -1 or end_idx == 0:
-                # Try to find JSON objects even if not in array format
-                json_pattern = r'\{"question":\s*"[^"]*",\s*"answer":\s*"[^"]*"\}'
-                matches = re.findall(json_pattern, text, re.DOTALL)
+            # First try to find JSON object format {"qa_pairs": [...]} - this should be tried first
+            # since the user's example shows this format
+            object_start = text_str.find('{')
+            object_end = text_str.rfind('}') + 1
+            
+            if object_start != -1 and object_end != 0:
+                json_text = text_str[object_start:object_end]
+                # Fix common JSON issues
+                json_text = self._fix_json_escaping(json_text)
+                try:
+                    parsed_obj = json.loads(json_text)
+                    if isinstance(parsed_obj, dict) and 'qa_pairs' in parsed_obj:
+                        qa_pairs = parsed_obj['qa_pairs']
+                        log_message(f"Successfully parsed JSON object with qa_pairs: {len(qa_pairs)} pairs found")
+                    else:
+                        # Handle case where object doesn't have qa_pairs but might be a single QA pair
+                        if isinstance(parsed_obj, dict) and 'question' in parsed_obj and 'answer' in parsed_obj:
+                            qa_pairs = [parsed_obj]
+                except json.JSONDecodeError as e:
+                    log_message(f"Failed to parse as JSON object: {e}")
+                    qa_pairs = None
+            
+            # If object format didn't work, try JSON array format [{"question": "...", "answer": "..."}]
+            if qa_pairs is None:
+                array_start = text_str.find('[')
+                array_end = text_str.rfind(']') + 1
+                
+                if array_start != -1 and array_end != 0:
+                    json_text = text_str[array_start:array_end]
+                    # Fix common JSON issues
+                    json_text = self._fix_json_escaping(json_text)
+                    try:
+                        qa_pairs = json.loads(json_text)
+                        log_message(f"Successfully parsed JSON array: {len(qa_pairs)} pairs found")
+                    except json.JSONDecodeError as e:
+                        log_message(f"Failed to parse as JSON array: {e}")
+                        qa_pairs = None
+            
+            # If neither worked, try to find individual JSON objects using a more permissive pattern
+            if qa_pairs is None:
+                # More robust pattern that handles nested quotes and multiline content
+                json_pattern = r'\{\s*"question":\s*"([^"\\]*(\\.[^"\\]*)*)"\s*,\s*"answer":\s*"([^"\\]*(\\.[^"\\]*)*)"\s*[^}]*\}'
+                matches = re.findall(json_pattern, text_str, re.DOTALL)
                 if matches:
-                    # Convert individual objects to array format
-                    text = '[' + ','.join(matches) + ']'
-                    start_idx = 0
-                    end_idx = len(text)
-                else:
-                    raise ValueError("No JSON array found in response")
+                    qa_pairs = []
+                    for match in matches:
+                        question = match[0].replace('\\"', '"').replace("\\'", "'")
+                        answer = match[2].replace('\\"', '"').replace("\\'", "'")
+                        qa_pairs.append({'question': question, 'answer': answer})
+                    log_message(f"Successfully extracted individual JSON objects: {len(qa_pairs)} pairs found")
             
-            json_text = text[start_idx:end_idx]
+            if qa_pairs is None:
+                raise ValueError(f"No valid JSON found in response. Content preview: {text_str[:200]}...")
             
-            # Fix common JSON issues
-            # Fix unescaped quotes in strings
-            json_text = self._fix_json_escaping(json_text)
-            
-            qa_pairs = json.loads(json_text)
+            # Process the qa_pairs regardless of original format
             validated_pairs = []
             for qa in qa_pairs:
                 if isinstance(qa, dict) and 'question' in qa and 'answer' in qa:
-                    # Clean up the strings
-                    question = str(qa['question']).strip().replace('\n', ' ').replace('\r', '')
-                    answer = str(qa['answer']).strip().replace('\n', ' ').replace('\r', '')
+                    # Clean up the strings - preserve newlines in answers but clean up extra whitespace
+                    question = str(qa['question']).strip().replace('\r', '')
+                    answer = str(qa['answer']).strip().replace('\r', '')
+                    
+                    # Remove excessive newlines but preserve intentional line breaks
+                    question = re.sub(r'\n+', ' ', question)
+                    answer = re.sub(r'\n{3,}', '\n\n', answer)  # Convert 3+ newlines to 2
+                    
                     validated_pairs.append({'question': question, 'answer': answer})
+            
+            if not validated_pairs:
+                raise ValueError(f"No valid QA pairs found after validation. Raw qa_pairs: {qa_pairs}")
+                
             return validated_pairs
+            
         except Exception as e:
             error_msg = str(e)
             log_message(f"JSON parsing failed: {error_msg}")
@@ -174,7 +248,8 @@ class JSONOutputParser(BaseLLMOutputParser):
                 model=context['model'],
                 chunk_info=context['chunk_info']
             )
-            return []
+            # Re-raise the exception so that generate_qa_step.py can properly handle failed chunks
+            raise
     
     def _fix_json_escaping(self, json_text: str) -> str:
         """Fix common JSON escaping issues in LLM responses."""
@@ -183,28 +258,78 @@ class JSONOutputParser(BaseLLMOutputParser):
             json.loads(json_text)
             return json_text
         except json.JSONDecodeError as e:
-            # Try some common fixes
+            log_message(f"JSON parsing failed, attempting fixes: {str(e)[:100]}")
+            # Try progressive fixes
             fixed_text = json_text
-            
-            # Fix 1: Handle unescaped quotes in strings (basic approach)
-            # This looks for quotes that aren't properly escaped
             import re
             
-            # Fix 2: Handle invalid escape sequences
-            # Replace invalid escape sequences like \' with proper escaping
+            # Fix 1: Handle invalid escape sequences
+            # Replace invalid escape sequences like \' with proper escaping or remove them
             fixed_text = fixed_text.replace("\\'", "'")  # \' is not valid JSON, just use '
             
-            # Fix 3: Try to fix missing commas between objects
-            # This is a very basic fix - replace }{ with },{
-            fixed_text = re.sub(r'\}\s*\{', '},{', fixed_text)
+            # Fix 2: Handle unescaped quotes within strings by finding and escaping them
+            # This is a more sophisticated approach that tries to identify unescaped quotes
+            # Look for quote patterns that are likely unescaped
+            fixed_text = re.sub(r'([^\\])"([^,:}\]]+)"([^,:}\]]+)"', r'\1"\2\\"\\"\3"', fixed_text)
             
-            # Fix 4: Handle newlines in strings by replacing them with \\n
-            # This is tricky because we need to only fix newlines inside strings
+            # Fix 3: Try to fix missing commas between objects and arrays
+            fixed_text = re.sub(r'\}\s*\{', '},{', fixed_text)  # Objects
+            fixed_text = re.sub(r'\]\s*\[', '],[', fixed_text)  # Arrays
+            
+            # Fix 4: Handle trailing commas
+            fixed_text = re.sub(r',(\s*[}\]])', r'\1', fixed_text)
+            
+            # Fix 5: Handle common control references formatting issues
+            # Sometimes LLMs use non-standard quote characters
+            fixed_text = fixed_text.replace('"', '"').replace('"', '"')
+            fixed_text = fixed_text.replace(''', "'").replace(''', "'")
+            
+            # Fix 6: Handle newlines inside string values
+            # Look for newlines that are not properly escaped
+            def fix_newlines_in_strings(match):
+                full_match = match.group(0)
+                # Replace actual newlines with \\n
+                fixed = full_match.replace('\n', '\\n').replace('\r', '\\r')
+                return fixed
+            
+            # Apply newline fixes to string values in JSON
+            fixed_text = re.sub(r'"[^"]*"', fix_newlines_in_strings, fixed_text)
+            
+            # Fix 7: Ensure proper JSON structure for control_references arrays
+            # Handle the specific case where control_references might be malformed
+            def fix_control_refs(match):
+                content = match.group(1)
+                refs = re.findall(r'[A-Z]+-[A-Z]+-\d+', content)
+                quoted_refs = [f'"{ref.strip()}"' for ref in refs]
+                return f'"control_references": [{", ".join(quoted_refs)}]'
+            
+            fixed_text = re.sub(r'"control_references":\s*\[([^\]]*)\]', fix_control_refs, fixed_text)
+            
+            # Try parsing after each fix
             try:
                 json.loads(fixed_text)
+                log_message("Successfully fixed JSON after applying corrections")
                 return fixed_text
-            except json.JSONDecodeError:
-                # If still failing, return original - the error will be logged
+            except json.JSONDecodeError as e2:
+                log_message(f"JSON still invalid after fixes: {str(e2)[:100]}")
+                
+                # Final attempt: Try to extract just the qa_pairs array if it exists
+                qa_pairs_match = re.search(r'"qa_pairs":\s*(\[.*?\])', fixed_text, re.DOTALL)
+                if qa_pairs_match:
+                    qa_array = qa_pairs_match.group(1)
+                    try:
+                        # Test if just the array is valid
+                        json.loads(qa_array)
+                        # Wrap it back in an object
+                        final_json = f'{{"qa_pairs": {qa_array}}}'
+                        json.loads(final_json)  # Validate the wrapped version
+                        log_message("Successfully extracted and fixed qa_pairs array")
+                        return final_json
+                    except json.JSONDecodeError:
+                        pass
+                
+                # If all fixes fail, return original - the error will be logged upstream
+                log_message("All JSON fixes failed, returning original")
                 return json_text
 
 
@@ -217,6 +342,7 @@ class QAGenerationChain:
         system_message: Optional[str] = None,
         extra_instructions: Optional[str] = None,
         custom_template: Optional[str] = None,
+        custom_prompt: Optional[str] = None,
     ):
         self.llm_provider = llm_provider
         self.questions_per_chunk = questions_per_chunk
@@ -224,6 +350,7 @@ class QAGenerationChain:
         self.system_message = system_message
         self.extra_instructions = extra_instructions or ""
         self.custom_template = custom_template
+        self.custom_prompt = custom_prompt
         self.human_template_str: Optional[str] = None
 
         if use_structured_output:
@@ -241,8 +368,13 @@ class QAGenerationChain:
         log_message(f"Initialized QA chain with {questions_per_chunk} questions per chunk")
 
     def _create_prompt_template(self):
-        template = self.custom_template or (
-            """You are an expert at creating high-quality training data for language models. 
+        # Use custom prompt if provided, otherwise use custom_template, otherwise use default
+        if self.custom_prompt:
+            # Custom prompt from definition file is used directly without additional wrapping
+            template = self.custom_prompt
+        else:
+            template = self.custom_template or (
+                """You are an expert at creating high-quality training data for language models. 
 Based on the following text, generate exactly {num_questions} question-answer pairs that would help train a chatbot to understand and respond about this content.
 
 Guidelines:
@@ -271,7 +403,7 @@ CRITICAL OUTPUT REQUIREMENTS:
 
 EXAMPLE:
 [{{"question": "What is the main purpose of this policy?", "answer": "The main purpose is to establish guidelines for information security."}}, {{"question": "How should agencies implement these controls?", "answer": "Agencies should implement controls based on their specific risk assessment and operational requirements."}}]"""
-        )
+            )
         self.human_template_str = template
         if self.system_message:
             return ChatPromptTemplate.from_messages([("system", self.system_message), ("human", template)]).partial(extra_instructions=self.extra_instructions)
@@ -310,6 +442,11 @@ EXAMPLE:
         self._log_prompt_response(chunk, formatted_prompt, raw_response, metadata)
         
         qa_pairs = self.output_parser.parse(raw_response) if not self.use_structured_output else []
+        
+        # If no Q&A pairs were generated, treat this as a failure
+        if not qa_pairs:
+            raise ValueError(f"No Q&A pairs generated for chunk {chunk.get('chunk_id', 'unknown')}")
+        
         enhanced: List[Dict] = []
         for qa in qa_pairs:
             enhanced.append({
@@ -398,6 +535,11 @@ OUTPUT:
                     )
                 
                 qa_pairs = self.output_parser.parse(resp) if not self.use_structured_output else []
+                
+                # If no Q&A pairs were generated, treat this as a failure
+                if not qa_pairs:
+                    raise ValueError(f"No Q&A pairs generated for chunk {c.get('chunk_id', 'unknown')}")
+                
                 enhanced_for_chunk = []
                 for qa in qa_pairs:
                     enhanced_for_chunk.append({

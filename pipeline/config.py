@@ -19,6 +19,8 @@ class PipelineConfig:
     validate_qa_dir: str = "_data/validate-qa"
     filter_qa_dir: str = "_data/filter-qa"
     combine_dir: str = "_data/combine"
+    qa_combine_dir: str = "_data/05-a-combine"
+    qa_combine_filename: str = "training_data.json"
     qa_train_dir: str = "_data/qa-train"
     training_model_dir: str = "_data/finetune-model"
     export_dir: str = "_data/export"
@@ -75,6 +77,8 @@ class PipelineConfig:
             validate_qa_dir=os.getenv("PIPELINE_VALIDATION_QA_DIR", "_data/validate-qa"),
             filter_qa_dir=os.getenv("PIPELINE_FILTER_QA_DIR", "_data/filter-qa"),
             combine_dir=os.getenv("PIPELINE_COMBINE_DIR", "_data/combine"),
+            qa_combine_dir=os.getenv("PIPELINE_QA_COMBINE_DIR", "_data/05-a-combine"),
+            qa_combine_filename=os.getenv("PIPELINE_QA_COMBINE_FILENAME", "training_data.json"),
             qa_train_dir=os.getenv("PIPELINE_QA_TRAIN_DIR", "_data/qa-train"),
             training_model_dir=os.getenv("PIPELINE_TRAINING_MODEL_DIR", "_data/finetune-model"),
             export_dir=os.getenv("PIPELINE_EXPORT_DIR", "_data/export"),

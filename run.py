@@ -183,8 +183,8 @@ def filter_qa_data(
 
 @app.command("combine")
 def combine_qa_files_cmd(
-    input_dir: str = typer.Option("_data/generate-qa", "--input-dir", "-i", help="Directory containing Q&A files to combine"),
-    output_file: str = typer.Option("_data/combine/training_data.json", "--output", "-o", help="Output combined training data file"),
+    input_dir: Optional[str] = typer.Option(None, "--input-dir", "-i", help="Directory containing Q&A files to combine"),
+    output_file: Optional[str] = typer.Option(None, "--output", "-o", help="Output combined training data file"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Enable verbose output")
 ):
     """
@@ -193,6 +193,13 @@ def combine_qa_files_cmd(
     Takes individual Q&A result files from the Q&A generation step and combines
     them into the unified format expected by the validation step.
     """
+    # Load config to get proper directories
+    config = PipelineConfig.from_env()
+    
+    # Use config values if not provided via command line
+    input_dir = input_dir or config.filter_qa_dir
+    output_file = output_file or str(Path(config.qa_combine_dir) / config.qa_combine_filename)
+    
     from combine_qa_files import combine_qa_files
     try:
         success = combine_qa_files(qa_dir=input_dir, output_file=output_file)
@@ -210,20 +217,24 @@ def combine_qa_files_cmd(
 
 @app.command("qa-train")
 def qa_to_training(
-    input_dir: str = typer.Option(None, "--input-dir", "-i", help="Directory containing filtered Q&A files. Overrides .env setting."),
+    input_file: str = typer.Option(None, "--input-file", "-i", help="Combined Q&A file to process. Overrides config settings."),
     output_dir: str = typer.Option(None, "--output-dir", "-o", help="Directory to save training prompts. Overrides .env setting."),
     template: str = typer.Option(None, "--template", help="Training template (alpaca, llama, etc.). Overrides .env setting."),
     verbose: bool = typer.Option(None, "--verbose", "-v", help="Enable verbose output. Overrides .env setting.")
 ):
     """
-    Step 5: Convert filtered Q&A pairs to training prompts.
+    Step 5: Convert combined Q&A file to training prompts.
     
-    Processes all filtered JSON files from the input directory and creates
-    training prompt files in the output directory with JSONL format.
+    Processes the combined Q&A JSON file and creates training prompt file
+    in JSONL format suitable for model training.
     """
     config = PipelineConfig.from_env()
     
-    if input_dir is not None: config.filter_qa_dir = input_dir
+    # Handle input file override
+    if input_file is not None:
+        input_path = Path(input_file)
+        config.qa_combine_dir = str(input_path.parent)
+        config.qa_combine_filename = input_path.name
     if output_dir is not None: config.qa_train_dir = output_dir
     if template is not None: config.training_template = template
     if verbose is not None: config.verbose = verbose
@@ -241,50 +252,8 @@ def finetune_model():
     """
     Step 6: Fine-tune base model using training prompts.
     
-    Required Environment Variables:
-        FINETUNE_MODEL_NAME: Base model name (e.g., meta-llama/Llama-3.2-1B-Instruct)
-    
-    Optional Environment Variables:
-        FINETUNE_MODEL_TYPE: Model type (llama, gemma, qwen) - auto-detected if not set
-        HF_TOKEN: HuggingFace token for accessing gated models
-        
-        # Training Configuration
-        NUM_TRAIN_EPOCHS: Number of training epochs (default: 3)
-        OPTIMIZER: Optimizer type (default: paged_adamw_8bit)
-        SAVE_STEPS: Save checkpoint every N steps (default: 25)
-        LOGGING_STEPS: Log every N steps (default: 5)
-        MAX_GRAD_NORM: Max gradient norm for clipping (model-specific default)
-        SAVE_TOTAL_LIMIT: Max number of checkpoints to keep (default: 3)
-        
-        # Precision & Performance
-        USE_FP16: Use 16-bit precision (default: false)
-        USE_BF16: Use bfloat16 precision (default: true)
-        GROUP_BY_LENGTH: Group by sequence length (default: true)
-        LR_SCHEDULER_TYPE: Learning rate scheduler (default: cosine)
-        GRADIENT_CHECKPOINTING: Use gradient checkpointing (default: true)
-        DATALOADER_PIN_MEMORY: Pin memory for dataloader (default: false)
-        REMOVE_UNUSED_COLUMNS: Remove unused columns (default: true)
-        DISABLE_WANDB: Disable Weights & Biases logging (default: true)
-        
-        # Testing
-        TEST_MODEL_AFTER_TRAINING: Test model after training (default: false)
-        TEST_MAX_NEW_TOKENS: Max tokens for test generation (default: 200)
-        TEST_TEMPERATURE: Temperature for test generation (default: 0.7)
-        TEST_TOP_P: Top-p for test generation (default: 0.9)
-        DEVICE_MAP: Device mapping strategy (default: auto)
-        TRUST_REMOTE_CODE: Trust remote code in models (default: true)
-    
-    Examples:
-        # Basic fine-tuning with Llama
-        export FINETUNE_MODEL_NAME="meta-llama/Llama-3.2-1B-Instruct"
-        python run.py finetune
-        
-        # Fine-tuning with custom settings
-        export FINETUNE_MODEL_NAME="google/gemma-2-2b-it"
-        export FINETUNE_MODEL_TYPE="gemma"
-        export NUM_TRAIN_EPOCHS="5"
-        export TEST_MODEL_AFTER_TRAINING="true"
-        python run.py finetune
+    Performs LoRA fine-tuning on a base model using the generated training data.
+    Configuration is handled through environment variables in config.env.
     """
     config = PipelineConfig.from_env()
     step = FinetuneStep(config)
@@ -303,65 +272,8 @@ def export_model(
     """
     Step 7: Export fine-tuned LoRA model to Ollama format.
     
-    Required Environment Variables:
-        EXPORT_MODEL_PATH: Path to the fine-tuned LoRA adapter directory
-        EXPORT_MODEL_NAME: Name for the exported Ollama model (can be overridden by --model-name)
-    
-    Optional Environment Variables:
-        EXPORT_OUTPUT_DIR: Output directory for merged model (default: _data/export)
-        EXPORT_SYSTEM_PROMPT: Custom system prompt for the model (can be overridden by --system-prompt)
-        EXPORT_JOB_ID: Job ID to load system prompt from job config
-        EXPORT_SKIP_MERGE: Skip model merging, use existing merged model (default: false)
-        
-        # Ollama Creation Settings
-        OLLAMA_CREATE_TIMEOUT_MINUTES: Timeout for ollama create command (default: 20)
-        OLLAMA_SHOW_REALTIME_OUTPUT: Show real-time ollama output (default: false)
-        
-        # HuggingFace Settings
-        HF_TOKEN: HuggingFace token for accessing gated models
-    
-    Process Overview:
-        1. Load LoRA adapter and base model
-        2. Merge LoRA weights with base model
-        3. Save merged model to disk
-        4. Create Ollama Modelfile with appropriate template
-        5. Run 'ollama create' to register the model
-    
-    Model Type Detection:
-        - Automatically detects model type (llama, gemma, qwen) from config.json
-        - Uses appropriate chat template and stop tokens for each model type
-        - Falls back to llama format if detection fails
-    
-    Examples:
-        # Basic export
-        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
-        export EXPORT_MODEL_NAME="my-custom-model"
-        python run.py export
-        
-        # Export with custom system prompt
-        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
-        export EXPORT_MODEL_NAME="policy-bot"
-        export EXPORT_SYSTEM_PROMPT="You are a helpful policy assistant."
-        python run.py export
-        
-        # Export with debugging (see ollama create progress)
-        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
-        export EXPORT_MODEL_NAME="debug-model"
-        export OLLAMA_SHOW_REALTIME_OUTPUT="true"
-        export OLLAMA_CREATE_TIMEOUT_MINUTES="30"
-        python run.py export
-        
-        # Skip merge step (if model already merged)
-        export EXPORT_MODEL_PATH="_data/06-finetune-model/final"
-        export EXPORT_MODEL_NAME="existing-model"
-        export EXPORT_SKIP_MERGE="true"
-        python run.py export
-    
-    Troubleshooting:
-        - If command hangs, set OLLAMA_SHOW_REALTIME_OUTPUT=true
-        - For large models, increase OLLAMA_CREATE_TIMEOUT_MINUTES
-        - Ensure Ollama server is running and accessible
-        - Check that EXPORT_MODEL_PATH contains valid LoRA adapter files
+    Merges LoRA adapter with base model and creates an Ollama-compatible model.
+    Automatically detects model type and applies appropriate chat template.
     """
     config = PipelineConfig.from_env()
     step = ExportStep(config)

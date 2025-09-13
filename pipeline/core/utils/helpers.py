@@ -42,3 +42,41 @@ def load_json_if_exists(path: str):
         return None
     with open(path, 'r', encoding='utf-8') as f:
         return json.load(f)
+
+
+def load_yaml_if_exists(path: str):
+    """Load YAML from path if it exists; return None otherwise."""
+    import os
+    try:
+        import yaml
+    except ImportError:
+        raise ImportError("PyYAML is required for YAML support. Install with: pip install pyyaml")
+    
+    if not path or not os.path.exists(path):
+        return None
+    with open(path, 'r', encoding='utf-8') as f:
+        return yaml.safe_load(f)
+
+
+def save_yaml_atomic(data, output_path: str):
+    """Safely save YAML to disk using a temporary file and atomic replace."""
+    import os
+    import tempfile
+    try:
+        import yaml
+    except ImportError:
+        raise ImportError("PyYAML is required for YAML support. Install with: pip install pyyaml")
+    
+    directory = os.path.dirname(os.path.abspath(output_path)) or "."
+    os.makedirs(directory, exist_ok=True)
+    fd, tmp_path = tempfile.mkstemp(prefix="tmp_", suffix=".yaml", dir=directory)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as tmp_file:
+            yaml.safe_dump(data, tmp_file, default_flow_style=False, allow_unicode=True, indent=2)
+        os.replace(tmp_path, output_path)
+    except Exception:
+        try:
+            os.remove(tmp_path)
+        except Exception:
+            pass
+        raise
