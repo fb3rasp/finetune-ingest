@@ -7,6 +7,12 @@ from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass, field
 
+try:
+    from dotenv import load_dotenv
+except ImportError:
+    def load_dotenv(*args, **kwargs):
+        pass
+
 
 @dataclass
 class PipelineConfig:
@@ -70,6 +76,11 @@ class PipelineConfig:
     @classmethod
     def from_env(cls) -> "PipelineConfig":
         """Create configuration from environment variables."""
+        # Load environment variables from config.env file
+        config_file = Path(__file__).parent.parent / "config.env"
+        if config_file.exists():
+            load_dotenv(config_file)
+        
         return cls(
             input_dir=os.getenv("PIPELINE_INPUT_DIR", "data/documents"),
             chunks_dir=os.getenv("PIPELINE_CHUNKS_DIR", "_data/chunk"),
