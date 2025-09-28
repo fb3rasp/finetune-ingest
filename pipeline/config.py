@@ -13,6 +13,11 @@ except ImportError:
     def load_dotenv(*args, **kwargs):
         pass
 
+try:
+    import yaml
+    YAML_AVAILABLE = True
+except ImportError:
+    YAML_AVAILABLE = False
 
 @dataclass
 class PipelineConfig:
@@ -72,12 +77,96 @@ class PipelineConfig:
         """Configuration post-initialization."""
         # Note: Directories are created on-demand by individual steps when needed
         pass
+
+    @classmethod
+    def from_yaml(cls, yaml_path: str) -> "PipelineConfig":
+        """Create configuration from YAML file."""
+        if not YAML_AVAILABLE:
+            raise ImportError("PyYAML is required for YAML support. Install with: pip install pyyaml")
+        
+        with open(yaml_path, 'r', encoding='utf-8') as f:
+            yaml_data = yaml.safe_load(f) or {}
+        
+        # Create config with YAML values, using defaults for missing values
+        return cls(
+            input_dir=yaml_data.get("input_dir", "data/documents"),
+            chunks_dir=yaml_data.get("chunks_dir", "_data/chunk"),
+            qa_dir=yaml_data.get("qa_dir", "_data/generate-qa"),
+            validate_qa_dir=yaml_data.get("validate_qa_dir", "_data/validate-qa"),
+            filter_qa_dir=yaml_data.get("filter_qa_dir", "_data/filter-qa"),
+            combine_dir=yaml_data.get("combine_dir", "_data/combine"),
+            qa_combine_dir=yaml_data.get("qa_combine_dir", "_data/05-a-combine"),
+            qa_combine_filename=yaml_data.get("qa_combine_filename", "training_data.json"),
+            qa_train_dir=yaml_data.get("qa_train_dir", "_data/qa-train"),
+            training_model_dir=yaml_data.get("training_model_dir", "_data/finetune-model"),
+            export_dir=yaml_data.get("export_dir", "_data/export"),
+            
+            # File paths
+            training_data_file=yaml_data.get("training_data_file", "_data/combine/training_data.json"),
+            validation_report_file=yaml_data.get("validation_report_file", "_data/validate-qa/validation_report.json"),
+            filtered_training_data_file=yaml_data.get("filtered_training_data_file", "_data/filter-qa/training_data_filtered.json"),
+            final_training_data_file=yaml_data.get("final_training_data_file", "_data/qa-train/training_data_final.jsonl"),
+            
+            chunk_size=yaml_data.get("chunk_size", 1000),
+            chunk_overlap=yaml_data.get("chunk_overlap", 200),
+            splitting_strategy=yaml_data.get("splitting_strategy", "recursive"),
+            
+            llm_provider=yaml_data.get("llm_provider", "local"),
+            llm_model=yaml_data.get("llm_model", "llama3"),
+            questions_per_chunk=yaml_data.get("questions_per_chunk", 3),
+            temperature=yaml_data.get("temperature", 0.7),
+            max_tokens=yaml_data.get("max_tokens", 2000),
+            reasoning=yaml_data.get("reasoning", False),
+            
+            validator_provider=yaml_data.get("validator_provider", "openai"),
+            validator_model=yaml_data.get("validator_model"),
+            validation_threshold=yaml_data.get("validation_threshold", 8.0),
+            filter_threshold=yaml_data.get("filter_threshold", 7.0),
+            validator_reasoning=yaml_data.get("validator_reasoning", False),
+            
+            training_template=yaml_data.get("training_template", "alpaca"),
+            export_model_name=yaml_data.get("export_model_name"),
+            export_system_prompt=yaml_data.get("export_system_prompt", "You are a helpful assistant specialized in AWS AppStream 2.0 and Well-Architected Framework principles. You provide accurate, clear information based on AWS documentation and best practices."),
+            verbose=yaml_data.get("verbose", False),
+            batch_size=yaml_data.get("batch_size", 10),
+        )
     
     @classmethod
     def from_env(cls) -> "PipelineConfig":
-        """Create configuration from environment variables."""
+        """Create configuration from environment variables with YAML override support."""
+        project_root = Path(__file__).parent.parent
+        
+        # Step 1: Check for YAML configuration files (highest priority)
+        yaml_files = [
+            project_root / "config.yaml",
+            project_root / "config.yml",
+            project_root / "pipeline.yaml",
+            project_root / "pipeline.yml"
+        ]
+        
+        for yaml_file in yaml_files:
+            if yaml_file.exists() and YAML_AVAILABLE:
+                # Load YAML config first, then merge with environment variables
+                config = cls.from_yaml(str(yaml_file))
+                
+                # Override YAML values with environment variables if they exist
+                # This allows env vars to override YAML on a per-field basis
+                config_file = project_root / "config.env"
+                if config_file.exists():
+                    load_dotenv(config_file)
+                
+                # Override specific fields with env vars if present
+                if os.getenv("EXPORT_MODEL_NAME"):
+                    config.export_model_name = os.getenv("EXPORT_MODEL_NAME")
+                if os.getenv("EXPORT_SYSTEM_PROMPT"):
+                    config.export_system_prompt = os.getenv("EXPORT_SYSTEM_PROMPT")
+                
+                return config
+        
+        # Step 2: Fall back to environment-only configuration
         # Load environment variables from config.env file
-        config_file = Path(__file__).parent.parent / "config.env"
+        config_file = project_root / "config.env"
+
         if config_file.exists():
             load_dotenv(config_file)
         
